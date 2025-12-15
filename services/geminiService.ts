@@ -1,56 +1,136 @@
-// Mock Service - No API Key needed for simulator mode
+// Gemini API Service for AI Chat and Image Generation
 
-export const generatePitBossResponse = async (
-  history: { role: string; text: string }[],
-  playerAction: string,
-  currentBalance: number
-): Promise<string> => {
-  // Simulate network latency for realism
-  await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 800));
+const GEMINI_API_KEY =
+  (typeof process !== "undefined" && process.env?.GEMINI_API_KEY) || "";
 
-  const lowerInput = playerAction.toLowerCase();
-  
-  // Cheat handling fallback
-  if (lowerInput.includes('cheat')) return "I didn't see anything... 😉";
+interface ChatMessage {
+  role: "user" | "model" | "system";
+  text: string;
+}
 
-  // Context-aware simulated responses
-  if (lowerInput.includes('hello') || lowerInput.includes('hi')) return "Welcome back to the floor! Ready to win big?";
-  if (lowerInput.includes('bonus')) return "Keep spinning! The big bonus is just around the corner.";
-  if (lowerInput.includes('jackpot')) return "The Grand Jackpot is getting heavy! Someone's gonna drop it soon.";
-  if (lowerInput.includes('lose') || lowerInput.includes('lost')) return "Bad luck passes, skill remains. Shake it off!";
-  if (lowerInput.includes('win') || lowerInput.includes('won')) return "That's what I'm talking about! 🚀";
-  if (lowerInput.includes('news')) return "I heard the Crypto Whales are migrating today. Might be a sign.";
-  if (lowerInput.includes('help')) return "Just tap the buttons and pray to the Kirin. It's easy!";
+// Generate Pit Boss AI Response
+export async function generatePitBossResponse(
+  messages: ChatMessage[],
+  userInput: string,
+  balance: number
+): Promise<string> {
+  // Fallback responses if API key is not available
+  if (!GEMINI_API_KEY) {
+    const fallbackResponses = [
+      `Hey! Your balance is ${balance.toLocaleString()} coins. Keep playing to win big! 🎰`,
+      `Looking good with ${balance.toLocaleString()} coins! Want some tips?`,
+      `I see you have ${balance.toLocaleString()} coins. That's a solid stack!`,
+      `Balance: ${balance.toLocaleString()} coins. Ready to hit the jackpot?`,
+    ];
+    return fallbackResponses[
+      Math.floor(Math.random() * fallbackResponses.length)
+    ];
+  }
 
-  const randomResponses = [
-      "The energy in here is electric tonight! ⚡",
-      `Looking at that balance... ${currentBalance.toLocaleString()} coins is a solid war chest.`,
-      "Trust your gut. The Game Vault watches.",
-      "Spin it to win it!",
-      "I've got a good feeling about this next round.",
-      "Remember: Scared money makes no money! 💸",
-      "I've seen players turn 10 coins into a fortune. Why not you?",
-      "Stay sharp, the Boss Fish is lurking."
-  ];
+  try {
+    const systemPrompt = `You are a friendly casino Pit Boss for an online gaming platform. 
+    The player's current balance is ${balance.toLocaleString()} coins. 
+    Be encouraging, fun, and helpful. Keep responses short (1-2 sentences max). 
+    Use emojis occasionally.`;
 
-  return randomResponses[Math.floor(Math.random() * randomResponses.length)];
-};
+    const conversationHistory = messages
+      .slice(-5) // Last 5 messages for context
+      .map((m) => ({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.text }],
+      }));
 
-export const generateCasinoImage = async (prompt: string, size: '1K' | '2K' | '4K'): Promise<string | null> => {
-    // Simulate generation time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Return a high-quality random image from a placeholder service to simulate generation
-    // Using a random seed based on time to ensure variety
-    const seed = Date.now();
-    return `https://picsum.photos/1024/1024?random=${seed}`;
-};
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: systemPrompt }],
+            },
+            ...conversationHistory,
+            {
+              role: "user",
+              parts: [{ text: userInput }],
+            },
+          ],
+        }),
+      }
+    );
 
-export const editCasinoImage = async (base64Image: string, prompt: string): Promise<string | null> => {
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // Return a different random image to simulate a successful edit
-    const seed = Date.now() + 1;
-    return `https://picsum.photos/1024/1024?grayscale&random=${seed}`;
-};
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      `Thanks for playing! Your balance: ${balance.toLocaleString()} coins.`
+    );
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    return `I'm having trouble connecting right now, but I see you have ${balance.toLocaleString()} coins! Keep playing! 🎰`;
+  }
+}
+
+// Generate Casino-themed Image
+export async function generateCasinoImage(
+  prompt: string,
+  size: "1K" | "2K" | "4K" = "1K"
+): Promise<string | null> {
+  // Fallback placeholder if API key is not available
+  if (!GEMINI_API_KEY) {
+    // Return a placeholder image URL
+    return `https://picsum.photos/seed/${encodeURIComponent(prompt)}/${
+      size === "1K" ? "512" : size === "2K" ? "1024" : "2048"
+    }`;
+  }
+
+  try {
+    const sizeMap = {
+      "1K": "512x512",
+      "2K": "1024x1024",
+      "4K": "2048x2048",
+    };
+
+    // Note: Gemini doesn't have image generation yet, so we'll use a placeholder
+    // In production, you might want to use Imagen API or DALL-E
+    const enhancedPrompt = `Casino gaming theme, ${prompt}, vibrant colors, neon lights, digital art style`;
+
+    // For now, return a placeholder that matches the prompt
+    // In a real implementation, you'd call an image generation API here
+    return `https://picsum.photos/seed/${encodeURIComponent(enhancedPrompt)}/${
+      size === "1K" ? "512" : size === "2K" ? "1024" : "2048"
+    }`;
+  } catch (error) {
+    console.error("Image generation error:", error);
+    return null;
+  }
+}
+
+// Edit Casino Image
+export async function editCasinoImage(
+  imageDataUrl: string,
+  editPrompt: string
+): Promise<string | null> {
+  // Fallback: return the original image if API key is not available
+  if (!GEMINI_API_KEY) {
+    return imageDataUrl;
+  }
+
+  try {
+    // Note: This would require image editing API
+    // For now, return the original image
+    // In production, you'd use Gemini's image editing capabilities or another service
+    console.log("Image edit requested:", editPrompt);
+    return imageDataUrl;
+  } catch (error) {
+    console.error("Image editing error:", error);
+    return imageDataUrl;
+  }
+}
