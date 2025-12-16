@@ -6,6 +6,51 @@ import CreativeStudio from './components/CreativeStudio';
 import { GameMode, ChatMessage } from './types';
 import { generatePitBossResponse } from './services/geminiService';
 import { Bot, MessageSquare, Menu, X, Gamepad2, Coins, Palette } from 'lucide-react';
+// Import all game images
+import blueDragonBanner from './assets/images/bluedragon-banner.png';
+import buffaloBanner from './assets/images/buffalo-banner.png';
+import fireKirinBanner from './assets/images/firekirin-banner.png';
+import fortune2GoBanner from './assets/images/fortune2go-banner.png';
+import gameVaultBanner from './assets/images/gamevualt.png';
+import goldenDragonBanner from './assets/images/goldendragon-banner.png';
+import juwaBanner from './assets/images/juwa-banner.png';
+import krakenBanner from './assets/images/kraken.png';
+import milkywayBanner from './assets/images/milkyway-banner.png';
+import oceanDragonBanner from './assets/images/oceandragon-banner.png';
+import orionStarsBanner from './assets/images/orionstars-banner.png';
+import pandaBanner from './assets/images/panda-banner.png';
+import pogBanner from './assets/images/pog.gif';
+import pulszBanner from './assets/images/pulsz.png';
+import riverSweepsBanner from './assets/images/riversweeps-banner.png';
+import slotOfVegasBanner from './assets/images/slotofvegas-banner.png';
+import ultramonsterBanner from './assets/images/ultramonster-banner.png';
+import vegasXBanner from './assets/images/vegasx-banner.png';
+import vpowerBanner from './assets/images/vpower-banner.png';
+import xgameBanner from './assets/images/xgame-banner.png';
+
+// Game list with images
+const GAMES = [
+  { name: 'Ocean Dragon', image: oceanDragonBanner, type: 'fish', color: 'blue' },
+  { name: 'Blue Dragon', image: blueDragonBanner, type: 'fish', color: 'blue' },
+  { name: 'Golden Dragon', image: goldenDragonBanner, type: 'fish', color: 'yellow' },
+  { name: 'Fire Kirin', image: fireKirinBanner, type: 'fish', color: 'red' },
+  { name: 'Kraken', image: krakenBanner, type: 'fish', color: 'cyan' },
+  { name: 'Panda', image: pandaBanner, type: 'fish', color: 'green' },
+  { name: 'Ultra Monster', image: ultramonsterBanner, type: 'fish', color: 'purple' },
+  { name: 'Slot of Vegas', image: slotOfVegasBanner, type: 'slots', color: 'purple' },
+  { name: 'Vegas X', image: vegasXBanner, type: 'slots', color: 'purple' },
+  { name: 'Game Vault', image: gameVaultBanner, type: 'slots', color: 'purple' },
+  { name: 'River Sweeps', image: riverSweepsBanner, type: 'slots', color: 'blue' },
+  { name: 'Orion Stars', image: orionStarsBanner, type: 'slots', color: 'purple' },
+  { name: 'Milky Way', image: milkywayBanner, type: 'slots', color: 'purple' },
+  { name: 'Fortune 2Go', image: fortune2GoBanner, type: 'slots', color: 'yellow' },
+  { name: 'Juwa', image: juwaBanner, type: 'slots', color: 'purple' },
+  { name: 'Buffalo', image: buffaloBanner, type: 'slots', color: 'orange' },
+  { name: 'Pulsz', image: pulszBanner, type: 'slots', color: 'purple' },
+  { name: 'POG', image: pogBanner, type: 'slots', color: 'pink' },
+  { name: 'VPower', image: vpowerBanner, type: 'slots', color: 'purple' },
+  { name: 'XGame', image: xgameBanner, type: 'slots', color: 'purple' },
+];
 
 export const App = () => {
   const [hasEntered, setHasEntered] = useState(false);
@@ -143,45 +188,57 @@ export const App = () => {
             </div>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
-            {/* Fish Game Card */}
-            <button 
-              onClick={() => setMode(GameMode.FISH)}
-              className="group relative h-64 bg-gradient-to-br from-blue-900 to-slate-900 rounded-3xl border-2 border-blue-500/50 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(0,100,255,0.3)]"
-            >
-               <div className="absolute inset-0 bg-[url('https://picsum.photos/800/600?blur=2')] bg-cover opacity-50 group-hover:opacity-70 transition"></div>
-               <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                  <Gamepad2 className="w-16 h-16 text-cyan-400 mb-4 drop-shadow-lg" />
-                  <h3 className="text-2xl font-bold text-white uppercase tracking-wider arcade-font">Ocean King</h3>
-                  <p className="text-cyan-200 mt-2 font-bold">Fish Hunter</p>
-               </div>
-            </button>
+         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 w-full max-w-7xl">
+            {GAMES.map((game, index) => {
+              const borderColors = {
+                blue: 'border-blue-500/50 shadow-[0_0_30px_rgba(0,100,255,0.3)]',
+                purple: 'border-purple-500/50 shadow-[0_0_30px_rgba(147,51,234,0.3)]',
+                yellow: 'border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.3)]',
+                red: 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]',
+                cyan: 'border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)]',
+                green: 'border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.3)]',
+                orange: 'border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.3)]',
+                pink: 'border-pink-500/50 shadow-[0_0_30px_rgba(236,72,153,0.3)]',
+              };
+              
+              const bgGradients = {
+                blue: 'from-blue-900 to-slate-900',
+                purple: 'from-purple-900 to-slate-900',
+                yellow: 'from-yellow-900 to-slate-900',
+                red: 'from-red-900 to-slate-900',
+                cyan: 'from-cyan-900 to-slate-900',
+                green: 'from-green-900 to-slate-900',
+                orange: 'from-orange-900 to-slate-900',
+                pink: 'from-pink-900 to-slate-900',
+              };
 
-            {/* Slots Card */}
-            <button 
-              onClick={() => setMode(GameMode.SLOTS)}
-              className="group relative h-64 bg-gradient-to-br from-purple-900 to-slate-900 rounded-3xl border-2 border-purple-500/50 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(147,51,234,0.3)]"
-            >
-               <div className="absolute inset-0 bg-[url('https://picsum.photos/800/601?blur=2')] bg-cover opacity-50 group-hover:opacity-70 transition"></div>
-               <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                  <div className="text-6xl mb-4 drop-shadow-lg">7️⃣</div>
-                  <h3 className="text-2xl font-bold text-white uppercase tracking-wider arcade-font">Dragon Slots</h3>
-                  <p className="text-purple-200 mt-2 font-bold">Jackpot 500x</p>
-               </div>
-            </button>
-            
-            {/* Creative Studio Card */}
-            <button 
-              onClick={() => setMode(GameMode.CREATIVE)}
-              className="group relative h-64 bg-gradient-to-br from-pink-900 to-slate-900 rounded-3xl border-2 border-pink-500/50 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(236,72,153,0.3)]"
-            >
-               <div className="absolute inset-0 bg-[url('https://picsum.photos/800/602?blur=2')] bg-cover opacity-50 group-hover:opacity-70 transition"></div>
-               <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                  <Palette className="w-16 h-16 text-pink-400 mb-4 drop-shadow-lg" />
-                  <h3 className="text-2xl font-bold text-white uppercase tracking-wider arcade-font">Nano Studio</h3>
-                  <p className="text-pink-200 mt-2 font-bold">AI Art Generator</p>
-               </div>
-            </button>
+              return (
+                <button
+                  key={index}
+                  onClick={() => setMode(game.type === 'fish' ? GameMode.FISH : GameMode.SLOTS)}
+                  className={`group relative h-48 md:h-56 bg-gradient-to-br ${bgGradients[game.color as keyof typeof bgGradients]} rounded-2xl border-2 ${borderColors[game.color as keyof typeof borderColors]} overflow-hidden hover:scale-105 transition duration-300`}
+                >
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-80 transition" 
+                    style={{ backgroundImage: `url(${game.image})` }}
+                  ></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/60 to-transparent"></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-10">
+                    {game.type === 'fish' ? (
+                      <Gamepad2 className="w-10 h-10 md:w-12 md:h-12 text-cyan-400 mb-2 drop-shadow-lg" />
+                    ) : (
+                      <div className="text-4xl md:text-5xl mb-2 drop-shadow-lg">7️⃣</div>
+                    )}
+                    <h3 className="text-base md:text-lg font-bold text-white uppercase tracking-wider arcade-font text-center leading-tight">
+                      {game.name}
+                    </h3>
+                    <p className="text-xs md:text-sm mt-1 font-bold text-gray-300">
+                      {game.type === 'fish' ? 'Fish Hunter' : 'Slots'}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
          </div>
       </main>
 
