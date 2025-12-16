@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Sparkles, Lock, ShieldAlert, Coins, Users, Clock, ShieldCheck, Loader2, UserPlus, LogIn, Globe, ChevronRight, Terminal, Gift, Info, Bell, Trophy, Star, TrendingUp, Zap, Gamepad } from 'lucide-react';
+import { Play, Sparkles, Lock, ShieldAlert, Coins, Users, Clock, ShieldCheck, Loader2, UserPlus, LogIn, Globe, ChevronRight, Terminal, Gift, Info, Bell, Trophy, Star, TrendingUp, Zap, Gamepad, Signal } from 'lucide-react';
 
 interface LandingPageProps {
   onLogin: (username: string, game: string) => void;
@@ -35,6 +35,34 @@ const AVAILABLE_GAMES = [
     'Panda Master',
     'Vpower'
 ];
+
+// Region Simulation Config
+const REGION_CONFIG: Record<string, { latency: number; serverName: string; stepDelay: number; routingLog: string }> = {
+    'NA_EAST': { 
+        latency: 18, 
+        serverName: 'US-EST-VAULT-01', 
+        stepDelay: 400,
+        routingLog: '> OPTIMIZED ROUTE: DIRECT'
+    },
+    'NA_WEST': { 
+        latency: 52, 
+        serverName: 'US-WST-KIRIN-09', 
+        stepDelay: 550,
+        routingLog: '> REROUTING VIA CALIFORNIA NODES...'
+    },
+    'EU': { 
+        latency: 145, 
+        serverName: 'EU-FRA-DRAGON-X', 
+        stepDelay: 800,
+        routingLog: '> ESTABLISHING TRANSATLANTIC LINK...'
+    },
+    'ASIA': { 
+        latency: 280, 
+        serverName: 'AP-TOK-MASTER-88', 
+        stepDelay: 1100,
+        routingLog: '> HIGH LATENCY DETECTED. BOOSTING SIGNAL...'
+    },
+};
 
 const generateRandomActivity = () => {
     const prefix = NAME_PREFIXES[Math.floor(Math.random() * NAME_PREFIXES.length)];
@@ -177,8 +205,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       setProcessLog(["> ESTABLISHING SECURE CONNECTION..."]);
       playSound('tick');
 
+      const regionSettings = REGION_CONFIG[region] || REGION_CONFIG['NA_EAST'];
+      const stepDuration = regionSettings.stepDelay; 
       const totalSteps = 10;
-      const stepDuration = 700; 
 
       for (let i = 1; i <= totalSteps; i++) {
           await wait(stepDuration);
@@ -187,14 +216,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           setProgress(currentPct);
           playSound('tick');
 
-          // Log Logic & Sequence
-          if (i === 1) setProcessLog(p => [...p, `> CONNECTING TO ${selectedGame.toUpperCase()}...`]);
-          if (i === 2) setProcessLog(p => [...p, `> USER DETECTED: ${username.toUpperCase()}`]);
-          if (i === 3) setProcessLog(p => [...p, "> ANALYZING NETWORK..."]);
+          // Dynamic Logs based on Region
+          if (i === 1) setProcessLog(p => [...p, `> CONNECTING TO ${selectedGame.toUpperCase()} VIA ${regionSettings.serverName}...`]);
+          if (i === 2) setProcessLog(p => [...p, regionSettings.routingLog]);
+          if (i === 3) setProcessLog(p => [...p, `> LATENCY: ${regionSettings.latency + Math.floor(Math.random()*15)}ms...`]);
           
           // Trigger Prize Animation at 40%
           if (i === 4) {
-              setProcessLog(p => [...p, "> ELIGIBILITY CONFIRMED"]);
+              setProcessLog(p => [...p, `> USER ${username.toUpperCase()} AUTHENTICATED`]);
               setShowPrizeUI(true);
           }
           
@@ -222,7 +251,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                requestAnimationFrame(animate);
           }
 
-          if (i === 8) setProcessLog(p => [...p, `> ALLOCATING ${bonusCount.toLocaleString()} COINS TO ${username.toUpperCase()}...`]);
+          if (i === 8) setProcessLog(p => [...p, `> ALLOCATING ${bonusCount.toLocaleString()} COINS...`]);
           if (i === 9) setProcessLog(p => [...p, "> VIP STATUS: ACTIVE"]);
           if (i === 10) setProcessLog(p => [...p, "> SECURITY CHECK REQUIRED..."]);
 
@@ -281,10 +310,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-40 fixed"></div>
         
         {/* Urgency Header */}
-        <div className="fixed top-0 left-0 right-0 w-full bg-red-600/20 border-b border-red-500/50 backdrop-blur-sm p-1.5 md:p-2 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-4 z-50">
+        <div className="fixed top-0 left-0 right-0 w-full bg-amber-500/10 border-b border-amber-500/30 backdrop-blur-sm p-1.5 md:p-2 flex flex-col md:flex-row justify-center items-center gap-1 md:gap-4 z-50">
             <div className="flex items-center gap-2 animate-pulse">
-                <ShieldAlert className="w-3 h-3 md:w-4 md:h-4 text-red-400" />
-                <span className="text-red-100 text-[10px] md:text-xs font-bold tracking-widest uppercase">High Traffic: Server Capacity 99%</span>
+                <Zap className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
+                <span className="text-amber-100 text-[10px] md:text-xs font-bold tracking-widest uppercase">🔥 RUSH HOUR: 99% CLAIMED - CLAIM YOUR SPOT NOW</span>
             </div>
             <div className="flex items-center gap-2 text-kirin-gold text-[10px] md:text-xs font-mono">
                 <Users className="w-3 h-3" />
@@ -505,8 +534,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
                                 {authMode === 'signup' && (
                                     <div>
-                                        <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-1 mb-1 block">
-                                            Server Region
+                                        <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-1 mb-1 block flex items-center justify-between">
+                                            <span>Server Region</span>
+                                            <span className="text-[9px] text-green-500 flex items-center gap-1"><Signal className="w-2 h-2" /> {REGION_CONFIG[region].latency}ms</span>
                                         </label>
                                         <div className="relative">
                                             <select 
