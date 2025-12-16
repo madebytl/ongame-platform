@@ -253,7 +253,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
           // Smooth progress animation
           const totalSteps = 8;
-          const baseStepDuration = 800; // Faster base delay between steps
+          const baseStepDuration = 1500; // Slower base delay so users can see all info
           const progressUpdateInterval = 30; // Update progress bar every 30ms for smoothness
           
           // Animate progress bar smoothly during the delay
@@ -273,7 +273,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           };
 
       for (let i = 1; i <= totalSteps; i++) {
-          // Variable delay to make it feel more natural (600-1000ms)
+          // Variable delay to make it feel more natural (1300-1700ms) - slower so users can read
           const stepDelay = baseStepDuration + (Math.random() * 400 - 200);
           const startPct = progress;
           const targetPct = (i / totalSteps) * 100;
@@ -284,19 +284,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           if (isSignUp) {
               // Sign Up: Account creation process
               if (i === 1) {
-                  setProcessLog(p => [...p, "📝 Setting up your profile..."]);
+                  setProcessLog(p => [...p, `📝 Setting up profile for @${username.toUpperCase()}...`]);
                   playSound('sparkle');
               } else if (i === 2) {
-                  setProcessLog(p => [...p, "🎮 Connecting to game server..."]);
+                  setProcessLog(p => [...p, `🎮 Connecting to ${selectedGame} server...`]);
                   playSound('sparkle');
               } else if (i === 3) {
-                  setProcessLog(p => [...p, `👤 Found @${username.toUpperCase()}`]);
+                  setProcessLog(p => [...p, `✅ User @${username.toUpperCase()} has been created`]);
                   playSound('success');
-                  await wait(400); // Shorter pause after finding user
+                  await wait(600); // Pause so user can see the message
                   
-                  // Start counting bonus when user is found
+                  // Start counting bonus when user is created
                   setShowPrizeUI(true);
-                  const duration = 2000; // Faster counting animation
+                  const duration = 2500; // Slower counting animation
                   const startTime = performance.now();
                   const endValue = bonusCount;
 
@@ -316,13 +316,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                   };
                   requestAnimationFrame(animate);
               } else if (i === 4) {
-                  setProcessLog(p => [...p, "💰 Calculating welcome bonus..."]);
+                  setProcessLog(p => [...p, `💰 Calculating welcome bonus for ${selectedGame}...`]);
               } else if (i === 5) {
-                  setProcessLog(p => [...p, `💎 Allocating ${bonusCount.toLocaleString()} coins...`]);
+                  setProcessLog(p => [...p, `💎 Allocating ${bonusCount.toLocaleString()} coins to ${selectedGame} account...`]);
               } else if (i === 6) {
-                  setProcessLog(p => [...p, "⭐ Activating VIP status..."]);
+                  setProcessLog(p => [...p, `⭐ Activating VIP status for ${selectedGame}...`]);
               } else if (i === 7) {
-                  setProcessLog(p => [...p, "✅ Account created successfully!"]);
+                  setProcessLog(p => [...p, `✅ Account created successfully for ${selectedGame}!`]);
                   playSound('success');
               } else if (i === 8) {
                   setProcessLog(p => [...p, "🔒 Security verification required..."]);
@@ -331,19 +331,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           } else {
               // Claim: Reward claiming process
               if (i === 1) {
-                  setProcessLog(p => [...p, "🔍 Searching for your account..."]);
+                  setProcessLog(p => [...p, `🔍 Searching for @${username.toUpperCase()} account...`]);
                   playSound('sparkle');
               } else if (i === 2) {
-                  setProcessLog(p => [...p, "📊 Checking eligibility..."]);
+                  setProcessLog(p => [...p, `📊 Checking eligibility for ${selectedGame}...`]);
                   playSound('sparkle');
               } else if (i === 3) {
-                  setProcessLog(p => [...p, `👤 Found @${username.toUpperCase()}`]);
+                  setProcessLog(p => [...p, `👤 Found @${username.toUpperCase()} on ${selectedGame}`]);
                   playSound('success');
-                  await wait(400); // Shorter pause after finding user
+                  await wait(600); // Pause so user can see the message
                   
                   // Start counting bonus when user is found
                   setShowPrizeUI(true);
-                  const duration = 2000; // Faster counting animation
+                  const duration = 2500; // Slower counting animation
                   const startTime = performance.now();
                   const endValue = bonusCount;
 
@@ -363,13 +363,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                   };
                   requestAnimationFrame(animate);
               } else if (i === 4) {
-                  setProcessLog(p => [...p, "🎁 Processing your reward..."]);
+                  setProcessLog(p => [...p, `🎁 Processing reward for ${selectedGame}...`]);
               } else if (i === 5) {
-                  setProcessLog(p => [...p, `💵 Crediting ${bonusCount.toLocaleString()} coins...`]);
+                  setProcessLog(p => [...p, `💵 Crediting ${bonusCount.toLocaleString()} coins to ${selectedGame}...`]);
               } else if (i === 6) {
-                  setProcessLog(p => [...p, "✨ Bonus package unlocked!"]);
+                  setProcessLog(p => [...p, `✨ Bonus package unlocked for ${selectedGame}!`]);
               } else if (i === 7) {
-                  setProcessLog(p => [...p, "✅ Reward claimed successfully!"]);
+                  setProcessLog(p => [...p, `✅ Reward claimed successfully from ${selectedGame}!`]);
                   playSound('success');
               } else if (i === 8) {
                   setProcessLog(p => [...p, "🔒 Final verification required..."]);
@@ -760,14 +760,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             </div>
             
             <div className="mt-6 text-center w-full">
-                 <div className="inline-flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-full border border-white/10 mb-2">
+                 <div className="inline-flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-full border border-white/10">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-[10px] md:text-xs text-gray-300 font-mono font-bold tracking-wider">{playersOnline.toLocaleString()} PLAYERS ONLINE</span>
                  </div>
-                 <p className="text-[10px] text-gray-600">
-                    By accessing OnGames Platform, you agree to the virtual terms of service. 
-                    <br/>Anti-cheat protocols are enforced globally.
-                 </p>
             </div>
         </div>
 
