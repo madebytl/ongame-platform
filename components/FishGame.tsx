@@ -29,7 +29,8 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
   // Helper to create fish
   const spawnFish = () => {
     const side = Math.random() > 0.5 ? 'left' : 'right';
-    const y = Math.random() * (CANVAS_HEIGHT - 100) + 50;
+    // Keep spawn Y within bounds to account for vertical movement
+    const y = Math.random() * (CANVAS_HEIGHT - 200) + 100;
     const typeRoll = Math.random();
     
     let type = FishType.SMALL;
@@ -45,14 +46,14 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
       value = 2000;
       emoji = '🐲'; // Dragon/Kirin
       size = 80;
-      speed = 1.5;
+      speed = 1.0; // Slower boss
     } else if (typeRoll > 0.9) {
       type = FishType.LARGE;
       hp = 100;
       value = 300;
       emoji = '🦈';
       size = 60;
-      speed = 1.8;
+      speed = 1.5;
     } else if (typeRoll > 0.7) {
       type = FishType.MEDIUM;
       hp = 40;
@@ -67,7 +68,7 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
       x: side === 'left' ? -size : CANVAS_WIDTH + size,
       y,
       vx: side === 'left' ? speed : -speed,
-      vy: Math.sin(Date.now() / 1000) * 0.5, // Slight wave motion
+      vy: (Math.random() - 0.5) * 0.2, // Small base drift
       type,
       hp,
       maxHp: hp,
@@ -75,7 +76,7 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
       emoji,
       width: size,
       height: size,
-      angle: 0
+      angle: Math.random() * Math.PI * 2 // Random movement phase
     };
     fishesRef.current.push(fish);
   };
@@ -192,8 +193,37 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
 
       // Update & Draw Fish
       fishesRef.current.forEach((fish, index) => {
-        fish.x += fish.vx;
-        fish.y += fish.vy + Math.sin(timestamp / 500 + Number(fish.id)) * 0.5; // Wiggle
+        const t = timestamp;
+        
+        // --- MOVEMENT LOGIC START ---
+        let dy = 0;
+        let speedMod = 1;
+
+        switch (fish.type) {
+            case FishType.SMALL:
+                // Fast, erratic movement with speed bursts
+                speedMod = 1 + 0.3 * Math.sin(t * 0.005 + fish.angle * 2);
+                dy = Math.sin(t * 0.01 + fish.angle) * 2.0; 
+                break;
+            case FishType.MEDIUM:
+                // Classic smooth sine wave
+                dy = Math.sin(t * 0.003 + fish.angle) * 1.5;
+                break;
+            case FishType.LARGE:
+                // Heavy, steady, subtle drift
+                speedMod = 0.9;
+                dy = Math.sin(t * 0.001 + fish.angle) * 0.8;
+                break;
+            case FishType.BOSS:
+                // Majestic slow curves
+                speedMod = 0.8; 
+                dy = Math.sin(t * 0.0015 + fish.angle) * 1.2;
+                break;
+        }
+
+        // Apply velocities
+        fish.x += fish.vx * speedMod;
+        fish.y += fish.vy + dy;
 
         // Remove if off screen
         if ((fish.vx > 0 && fish.x > canvas.width + 100) || (fish.vx < 0 && fish.x < -100)) {
@@ -201,21 +231,54 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
           return;
         }
 
-        // Draw Fish
+        // --- DRAWING ---
         ctx.save();
         ctx.translate(fish.x, fish.y);
-        ctx.scale(fish.vx > 0 ? -1 : 1, 1); // Flip if moving left (assumes emoji faces left)
+        
+        // Calculate dynamic tilt based on vertical movement
+        // Tilt towards the direction of the wave's slope
+        // If moving Right (vx > 0): slope Up (-) means tilt Up (-). 
+        // We flip scale X for right movement, so check orientation.
+        const tiltIntensity = 0.8;
+        const tilt = Math.atan2(dy + fish.vy, Math.abs(fish.vx * speedMod)) * tiltIntensity;
+
+        // Emojis typically face Left by default (🐠, 🦈, 🐲).
+        // If vx > 0 (Right), flip X (-1).
+        // If flipped, rotation needs to be inverted relative to canvas.
+        if (fish.vx > 0) {
+            ctx.scale(-1, 1); 
+            ctx.rotate(-tilt); 
+        } else {
+            ctx.scale(1, 1);
+            ctx.rotate(tilt);
+        }
+
         ctx.font = `${fish.width}px serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(fish.emoji, 0, 0);
         
-        // HP Bar for big fish
+        // HP Bar for big fish (Undo transforms for stable bar)
         if (fish.type === FishType.BOSS || fish.type === FishType.LARGE) {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(-20, -30, 40, 5);
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(-20, -30, 40 * (fish.hp / fish.maxHp), 5);
+            // Un-rotate and un-scale for the HP bar to keep it straight above fish
+            if (fish.vx > 0) {
+                ctx.rotate(tilt);
+                ctx.scale(-1, 1);
+            } else {
+                ctx.rotate(-tilt);
+            }
+            // Now at (0,0) relative to fish center, upright.
+            
+            const barWidth = 40;
+            const barHeight = 5;
+            const yOffset = -fish.height / 2 - 15;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(-barWidth/2, yOffset, barWidth, barHeight);
+            
+            const hpPercent = fish.hp / fish.maxHp;
+            ctx.fillStyle = hpPercent > 0.5 ? '#00ff00' : (hpPercent > 0.2 ? '#ffff00' : '#ff0000');
+            ctx.fillRect(-barWidth/2, yOffset, barWidth * hpPercent, barHeight);
         }
         
         ctx.restore();
@@ -237,17 +300,21 @@ const FishGame: React.FC<FishGameProps> = ({ balance, setBalance, onGameEvent, g
         let hit = false;
         for (let j = fishesRef.current.length - 1; j >= 0; j--) {
           const f = fishesRef.current[j];
+          // Hitbox slightly larger for gameplay feel
           const dist = Math.hypot(b.x - f.x, b.y - f.y);
           if (dist < f.width / 1.5) {
             // HIT!
             hit = true;
             createExplosion(b.x, b.y, '#ffff00'); // Spark on hit
             
-            // Damage calc (simple)
-            // Critical hit chance?
+            // Damage calc
             const isCrit = Math.random() < 0.1;
             const dmg = isCrit ? b.power * 2 : b.power;
             f.hp -= dmg;
+            
+            // Shake effect on hit (push back slightly)
+            f.x += b.vx * 0.05;
+            f.y += b.vy * 0.05;
 
             if (f.hp <= 0) {
               // FISH CAUGHT!

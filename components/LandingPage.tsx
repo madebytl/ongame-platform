@@ -516,7 +516,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             <button 
                                 type="submit" 
                                 disabled={!isFormValid}
-                                className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 mt-4 group
+                                className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 mt-4 group relative overflow-hidden
                                     ${isFormValid 
                                         ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-purple-900/30' 
                                         : 'bg-slate-800 text-gray-600 cursor-not-allowed'}
