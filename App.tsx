@@ -7,16 +7,40 @@ import { GameMode, ChatMessage } from './types';
 import { generatePitBossResponse } from './services/geminiService';
 import { Bot, MessageSquare, Menu, X, Gamepad2, Coins, Palette, Sparkles, Megaphone, Flame, Crown, Zap } from 'lucide-react';
 
+// --- GAME IMAGES ---
+const GAME_IMAGES: Record<string, string> = {
+  'Blue Dragon': '/games/bluedragon-banner.png',
+  'Buffalo Strike': '/games/buffalo-banner.png',
+  'Fire Kirin': '/games/firekirin-banner.png',
+  'Fortune 2 Go': '/games/fortune2go-banner.png',
+  'Game Vault': '/games/gamevualt.png',
+  'Golden Dragon': '/games/goldendragon-banner.png',
+  'Juwa': '/games/juwa-banner.png',
+  'Kraken': '/games/kraken.png',
+  'Milky Way': '/games/milkyway-banner.png',
+  'Ocean Dragon': '/games/oceandragon-banner.png',
+  'Orion Stars': '/games/orionstars-banner.png',
+  'Panda Master': '/games/panda-banner.png',
+  'Pot of Gold': '/games/pulsz.png',
+  'Pulsz': '/games/pulsz.png',
+  'RiverSweeps': '/games/riversweeps-banner.png',
+  'Slots of Vegas': '/games/slotofvegas-banner.png',
+  'Ultra Monster': '/games/ultramonster-banner.png',
+  'Vegas X': '/games/vegasx-banner.png',
+  'VPower': '/games/vpower-banner.png',
+  'X Game': '/games/xgame-banner.png'
+};
+
 // --- ASSETS ---
 // Using absolute string paths ensures the browser requests the image file directly
 // without trying to process it as a JavaScript module.
 const ASSETS = {
-  fireKirin: { src: '/games/firekirin-banner.png', fallback: 'https://images.unsplash.com/photo-1582967788606-a171f1080ca8?q=80' },
-  goldenDragon: { src: '/games/goldendragon-banner.png', fallback: 'https://images.unsplash.com/photo-1605870445919-838d190e8e1b?q=80' },
-  milkyWay: { src: '/games/milkyway-banner.png', fallback: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80' },
-  blueDragon: { src: '/games/bluedragon-banner.png', fallback: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80' },
-  juwa: { src: '/games/juwa-banner.png', fallback: 'https://images.unsplash.com/photo-1635326444826-06c8f8e9e789?q=80' },
-  panda: { src: '/games/panda-banner.png', fallback: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?q=80' },
+  fireKirin: { src: GAME_IMAGES['Fire Kirin'], fallback: 'https://images.unsplash.com/photo-1582967788606-a171f1080ca8?q=80' },
+  goldenDragon: { src: GAME_IMAGES['Golden Dragon'], fallback: 'https://images.unsplash.com/photo-1605870445919-838d190e8e1b?q=80' },
+  milkyWay: { src: GAME_IMAGES['Milky Way'], fallback: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80' },
+  blueDragon: { src: GAME_IMAGES['Blue Dragon'], fallback: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80' },
+  juwa: { src: GAME_IMAGES['Juwa'], fallback: 'https://images.unsplash.com/photo-1635326444826-06c8f8e9e789?q=80' },
+  panda: { src: GAME_IMAGES['Panda Master'], fallback: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?q=80' },
 };
 
 // Ticker Generators
@@ -35,7 +59,7 @@ export const App = () => {
   const [username, setUsername] = useState("");
   const [selectedGame, setSelectedGame] = useState("Fire Kirin");
   const [mode, setMode] = useState<GameMode>(GameMode.LOBBY);
-  const [balance, setBalance] = useState(10000);
+  const [balance, setBalance] = useState(20);
   const [jackpot, setJackpot] = useState(50000);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -177,81 +201,58 @@ export const App = () => {
             </div>
          </div>
 
-         <div className="w-full max-w-6xl space-y-8">
+         {/* Bonus Prize Section */}
+         <div className="mb-10 flex items-center gap-4 bg-gradient-to-r from-green-950/40 via-green-900/30 to-green-950/40 px-8 py-4 border border-green-500/30 backdrop-blur-sm rounded-2xl shadow-lg shadow-green-900/20">
+            <div className="flex items-center gap-3 flex-1">
+               <div className="relative">
+                  <div className="absolute inset-0 bg-green-500 rounded-full blur-lg opacity-50 animate-pulse"></div>
+                  <Coins className="w-8 h-8 text-green-400 relative z-10 drop-shadow-lg" />
+               </div>
+               <div className="flex flex-col">
+                  <span className="text-green-400 font-bold tracking-widest text-[10px] uppercase">Available Bonus</span>
+                  <div className="text-3xl font-black text-white drop-shadow-sm tabular-nums font-mono">$20.00</div>
+               </div>
+            </div>
+            <button 
+               onClick={() => {
+                  setBalance(b => b + 20);
+                  alert('Successfully withdrew $20.00 to your balance!');
+               }}
+               className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-lg shadow-green-900/30 transition-all active:scale-95"
+            >
+               Withdraw
+            </button>
+         </div>
+
+         <div className="w-full max-w-7xl space-y-6">
              
-             {/* FEATURED GAMES */}
+             {/* ALL GAMES - Scrollable Grid */}
              <div>
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Flame className="w-5 h-5 text-orange-500" /> FEATURED TABLES</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Fish Game Card */}
-                    <button 
-                    onClick={() => setMode(GameMode.FISH)}
-                    className="group relative h-64 bg-slate-900 rounded-3xl border border-blue-500/30 overflow-hidden hover:scale-[1.02] transition duration-300 shadow-[0_0_30px_rgba(0,100,255,0.15)]"
-                    >
-                        <img src={ASSETS.fireKirin.src} onError={(e) => e.currentTarget.src = ASSETS.fireKirin.fallback} alt="Ocean King" className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-                        <div className="absolute inset-0 flex flex-col items-center justify-end p-6">
-                            <Gamepad2 className="w-10 h-10 text-cyan-400 mb-2 drop-shadow-lg group-hover:animate-bounce" />
-                            <h3 className="text-xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Ocean King</h3>
-                            <p className="text-cyan-300 text-xs font-bold uppercase tracking-widest opacity-80">Fish Hunter</p>
-                        </div>
-                    </button>
-
-                    {/* Slots Card */}
-                    <button 
-                    onClick={() => setMode(GameMode.SLOTS)}
-                    className="group relative h-64 bg-slate-900 rounded-3xl border border-purple-500/30 overflow-hidden hover:scale-[1.02] transition duration-300 shadow-[0_0_30px_rgba(147,51,234,0.15)]"
-                    >
-                        <img src={ASSETS.goldenDragon.src} onError={(e) => e.currentTarget.src = ASSETS.goldenDragon.fallback} alt="Dragon Slots" className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-                        <div className="absolute inset-0 flex flex-col items-center justify-end p-6">
-                            <div className="text-4xl mb-2 drop-shadow-lg group-hover:animate-pulse">7️⃣</div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Dragon Slots</h3>
-                            <p className="text-purple-300 text-xs font-bold uppercase tracking-widest opacity-80">Jackpot 500x</p>
-                        </div>
-                    </button>
-                    
-                    {/* Creative Studio Card */}
-                    <button 
-                    onClick={() => setMode(GameMode.CREATIVE)}
-                    className="group relative h-64 bg-slate-900 rounded-3xl border border-pink-500/30 overflow-hidden hover:scale-[1.02] transition duration-300 shadow-[0_0_30px_rgba(236,72,153,0.15)]"
-                    >
-                        <img src={ASSETS.milkyWay.src} onError={(e) => e.currentTarget.src = ASSETS.milkyWay.fallback} alt="Nano Studio" className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-                        <div className="absolute inset-0 flex flex-col items-center justify-end p-6">
-                            <Palette className="w-10 h-10 text-pink-400 mb-2 drop-shadow-lg group-hover:rotate-12 transition" />
-                            <h3 className="text-xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Nano Studio</h3>
-                            <p className="text-pink-300 text-xs font-bold uppercase tracking-widest opacity-80">AI Art Gen</p>
-                        </div>
-                    </button>
-                </div>
-             </div>
-
-             {/* MORE GAMES */}
-             <div>
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Crown className="w-5 h-5 text-yellow-500" /> CLASSIC ARCADE</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                     {[
-                         { name: 'Blue Dragon', img: ASSETS.blueDragon, type: 'Fish' },
-                         { name: 'Juwa', img: ASSETS.juwa, type: 'Slots' },
-                         { name: 'Panda Master', img: ASSETS.panda, type: 'Arcade' }
-                     ].map((game, i) => (
-                        <button 
-                            key={i} 
-                            onClick={() => {
-                                // For now, these redirect to fish game logic but with a different skin context if implemented
-                                setMode(GameMode.FISH);
-                            }}
-                            className="group relative h-40 bg-slate-900 rounded-2xl border border-white/10 overflow-hidden hover:border-yellow-500/50 hover:scale-[1.02] transition-all"
-                        >
-                            <img src={game.img.src} onError={(e) => e.currentTarget.src = game.img.fallback} alt={game.name} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-500" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                            <div className="absolute bottom-3 left-3">
-                                <h4 className="font-black text-white italic uppercase leading-none">{game.name}</h4>
-                                <span className="text-[10px] text-yellow-400 font-bold uppercase">{game.type}</span>
-                            </div>
-                        </button>
-                     ))}
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Gamepad2 className="w-5 h-5 text-purple-500" /> ALL GAMES ({Object.keys(GAME_IMAGES).length})</h3>
+                <div className="overflow-x-auto pr-4 custom-scrollbar">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 min-w-min pb-4">
+                        {Object.entries(GAME_IMAGES).map(([name, imgSrc], i) => (
+                            <button 
+                                key={i} 
+                                onClick={() => {
+                                    setSelectedGame(name);
+                                    setMode(GameMode.FISH);
+                                }}
+                                className="group relative w-40 h-56 bg-slate-900 rounded-2xl border border-white/10 overflow-hidden hover:border-purple-500/50 hover:scale-105 transition-all shadow-lg flex-shrink-0"
+                            >
+                                <img 
+                                    src={imgSrc} 
+                                    onError={(e) => e.currentTarget.src = 'https://images.unsplash.com/photo-1556438064-2d7646166914?q=80&w=400'} 
+                                    alt={name} 
+                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                                <div className="absolute inset-0 flex items-end p-4">
+                                    <h4 className="font-black text-white uppercase leading-tight text-sm drop-shadow-lg">{name}</h4>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
                 </div>
              </div>
 
