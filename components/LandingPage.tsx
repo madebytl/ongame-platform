@@ -78,6 +78,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   const [stage, setStage] = useState<Stage>('idle');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [gameSelectionFlash, setGameSelectionFlash] = useState(false); // Visual feedback state
   
   // Stats & Ticker
   const [onlineCount, setOnlineCount] = useState(1420);
@@ -462,18 +463,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             
                             {/* Game Select */}
                             <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-500 pl-1 flex items-center gap-1">
-                                    <Gamepad2 className="w-3 h-3" /> Select Game Platform
+                                <label className={`text-[10px] uppercase font-bold pl-1 flex items-center gap-1 transition-colors ${gameSelectionFlash ? 'text-green-400' : 'text-gray-500'}`}>
+                                    <Gamepad2 className={`w-3 h-3 ${gameSelectionFlash ? 'animate-bounce' : ''}`} /> Select Game Platform
                                 </label>
                                 <div className="relative group">
                                     <select 
                                         value={selectedGame}
-                                        onChange={(e) => setSelectedGame(e.target.value)}
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all appearance-none text-sm"
+                                        onChange={(e) => {
+                                            setSelectedGame(e.target.value);
+                                            setGameSelectionFlash(true);
+                                            playSound('click');
+                                            setTimeout(() => setGameSelectionFlash(false), 600);
+                                        }}
+                                        className={`w-full bg-black/50 border rounded-xl px-4 py-3 text-white font-bold outline-none focus:ring-1 focus:ring-purple-500/50 transition-all appearance-none text-sm ${
+                                            gameSelectionFlash 
+                                            ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
+                                            : 'border-white/10 focus:border-purple-500/50'
+                                        }`}
                                     >
                                         {AVAILABLE_GAMES.map(g => <option key={g} value={g}>{g}</option>)}
                                     </select>
-                                    <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none rotate-90" />
+                                    
+                                    {/* Dynamic Icon: Chevron or Check */}
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        {gameSelectionFlash ? (
+                                            <Check className="w-4 h-4 text-green-400 animate-in zoom-in duration-200" />
+                                        ) : (
+                                            <ChevronRight className="w-4 h-4 text-gray-500 rotate-90 transition-transform group-hover:translate-y-0.5" />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
