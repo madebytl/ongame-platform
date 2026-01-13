@@ -402,7 +402,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             <div className="text-center mb-6">
                 <div className="inline-block relative">
                     <h1 className="text-5xl font-black italic tracking-tighter text-white drop-shadow-2xl mb-1 arcade-font">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-500">FIRE</span> KIRIN
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-500">JACKPOT</span> US
                     </h1>
                     <div className="absolute -right-6 -top-2">
                         <Sparkles className="w-6 h-6 text-yellow-400 animate-spin-slow" />
