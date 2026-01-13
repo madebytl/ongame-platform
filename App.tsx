@@ -5,16 +5,21 @@ import LandingPage from './components/LandingPage';
 import CreativeStudio from './components/CreativeStudio';
 import { GameMode, ChatMessage } from './types';
 import { generatePitBossResponse } from './services/geminiService';
-import { Bot, MessageSquare, Menu, X, Gamepad2, Coins, Palette, Sparkles, Megaphone } from 'lucide-react';
+import { Bot, MessageSquare, Menu, X, Gamepad2, Coins, Palette, Sparkles, Megaphone, Flame, Crown, Zap } from 'lucide-react';
 
 // --- ASSETS ---
-// Pointing to local assets in the /games directory
-// Note: In this environment, we use direct paths relative to index.html
-const fireKirinBanner = './games/firekirin-banner.png';
-const goldenDragonBanner = './games/goldendragon-banner.png';
-const milkyWayBanner = './games/milkyway-banner.png';
+// Using absolute string paths ensures the browser requests the image file directly
+// without trying to process it as a JavaScript module.
+const ASSETS = {
+  fireKirin: { src: '/games/firekirin-banner.png', fallback: 'https://images.unsplash.com/photo-1582967788606-a171f1080ca8?q=80' },
+  goldenDragon: { src: '/games/goldendragon-banner.png', fallback: 'https://images.unsplash.com/photo-1605870445919-838d190e8e1b?q=80' },
+  milkyWay: { src: '/games/milkyway-banner.png', fallback: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80' },
+  blueDragon: { src: '/games/bluedragon-banner.png', fallback: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80' },
+  juwa: { src: '/games/juwa-banner.png', fallback: 'https://images.unsplash.com/photo-1635326444826-06c8f8e9e789?q=80' },
+  panda: { src: '/games/panda-banner.png', fallback: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?q=80' },
+};
 
-// Ticker Generators (Synced with Landing Page logic)
+// Ticker Generators
 const NAME_PREFIXES = ['Dragon', 'Lucky', 'Fire', 'Super', 'Mega', 'Gold', 'Fish', 'King', 'Master', 'Slot', 'Vegas', 'Royal', 'Star'];
 const NAME_SUFFIXES = ['Slayer', 'Winner', '777', '88', '99', 'King', 'Boy', 'Girl', 'Pro', 'X', 'Hunter'];
 const PRIZES = ['5.00', '10.00', '25.00', '50.00', '8.88', '15.00', '99.00', '110.00', '45.00', '12.50', '5.50', '115.00', '88.00', '105.00', '60.00'];
@@ -31,23 +36,21 @@ export const App = () => {
   const [selectedGame, setSelectedGame] = useState("Fire Kirin");
   const [mode, setMode] = useState<GameMode>(GameMode.LOBBY);
   const [balance, setBalance] = useState(10000);
-  const [jackpot, setJackpot] = useState(50000); // Progressive Jackpot State
+  const [jackpot, setJackpot] = useState(50000);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   
-  // Ticker State
   const [tickerItem, setTickerItem] = useState(generateRandomActivity());
   const [showTicker, setShowTicker] = useState(true);
 
-  // Auto-scroll chat
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Ticker Effect
   useEffect(() => {
     const tickerInterval = setInterval(() => {
         setShowTicker(false);
@@ -66,13 +69,9 @@ export const App = () => {
         { role: 'model', text: `Welcome to ${game} on JACKPOT US, ${user}! I'm the Boss here. Need chips? Just ask!` }
       ]);
       setHasEntered(true);
-      // Trigger locker check again on entry
-      if ((window as any)._VR) {
-          (window as any)._VR();
-      }
+      if ((window as any)._VR) { (window as any)._VR(); }
   };
 
-  // Handle AI interactions
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
     const userMsg: ChatMessage = { role: 'user', text: chatInput };
@@ -80,7 +79,6 @@ export const App = () => {
     setChatInput("");
     setIsLoadingChat(true);
 
-    // Simple cheat codes handled locally, else Gemini
     if (chatInput.toLowerCase().includes("add coins") || chatInput.toLowerCase().includes("cheat")) {
        setTimeout(() => {
            setMessages(prev => [...prev, { role: 'model', text: '🤫 Giving you a stimulus package. Don\'t tell the owner.' }]);
@@ -96,7 +94,6 @@ export const App = () => {
   };
 
   const onGameEvent = async (eventDescription: string) => {
-    // Occasionally trigger AI comment on game events
     if (Math.random() > 0.7) {
         const responseText = await generatePitBossResponse(messages, `[System Event: Player triggered: ${eventDescription}]`, balance);
         setMessages(prev => [...prev, { role: 'model', text: responseText }]);
@@ -105,12 +102,10 @@ export const App = () => {
 
   const goBack = () => setMode(GameMode.LOBBY);
 
-  // Show Landing Page if not logged in
   if (!hasEntered) {
       return <LandingPage onLogin={handleLogin} />;
   }
 
-  // Render Game Modes
   if (mode === GameMode.FISH) {
       return <FishGame balance={balance} setBalance={setBalance} onGameEvent={onGameEvent} goBack={goBack} />;
   }
@@ -123,11 +118,10 @@ export const App = () => {
       return <CreativeStudio goBack={goBack} onGameEvent={onGameEvent} />;
   }
 
-  // Render Lobby (Default)
   return (
     <div className="min-h-screen bg-[#050b14] text-white flex flex-col relative overflow-x-hidden font-sans">
       {/* Navbar */}
-      <nav className="p-4 flex justify-between items-center bg-slate-900/80 backdrop-blur border-b border-white/10 z-20">
+      <nav className="p-4 flex justify-between items-center bg-slate-900/80 backdrop-blur border-b border-white/10 z-20 sticky top-0">
         <div className="flex items-center gap-2">
            <div className="relative">
              <span className="text-2xl animate-pulse">🔥</span>
@@ -157,11 +151,10 @@ export const App = () => {
       </nav>
 
       {/* Hero Section */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-         {/* Background Video/Animation Placeholder */}
-         <div className="absolute inset-0 z-[-1] overflow-hidden opacity-30">
+      <main className="flex-1 flex flex-col items-center p-6 relative z-10">
+         {/* Background Effects */}
+         <div className="absolute inset-0 z-[-1] overflow-hidden opacity-30 pointer-events-none">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(139,92,246,0.15),_transparent_70%)]"></div>
-            {/* Floating Icons */}
             <div className="absolute top-1/4 left-1/4 text-6xl animate-float opacity-30 blur-sm">🐠</div>
             <div className="absolute bottom-1/4 right-1/4 text-6xl animate-spin-slow opacity-30 blur-sm">🎰</div>
          </div>
@@ -175,69 +168,93 @@ export const App = () => {
                 </span>
             </div>
          </div>
-
-         <h2 className="text-4xl md:text-6xl font-black text-center mb-8 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] arcade-font text-white">
-           CHOOSE YOUR GAME
-         </h2>
          
-         {/* Global Jackpot Display in Lobby */}
-         <div className="mb-10 bg-gradient-to-r from-transparent via-red-950/80 to-transparent px-16 py-4 border-y border-red-500/20 backdrop-blur-sm">
-            <div className="text-center">
-                <span className="text-red-400 font-bold tracking-[0.3em] text-[10px] uppercase animate-pulse">Live Progressive Jackpot</span>
-                <div className="text-5xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] tabular-nums mt-1 font-mono">
-                  ${jackpot.toLocaleString()}
-                </div>
+         {/* Global Jackpot */}
+         <div className="mb-10 bg-gradient-to-r from-transparent via-red-950/80 to-transparent px-16 py-4 border-y border-red-500/20 backdrop-blur-sm w-full text-center">
+            <span className="text-red-400 font-bold tracking-[0.3em] text-[10px] uppercase animate-pulse">Live Progressive Jackpot</span>
+            <div className="text-5xl md:text-6xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,1)] tabular-nums mt-1 font-mono">
+              ${jackpot.toLocaleString()}
             </div>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
-            {/* Fish Game Card */}
-            <button 
-              onClick={() => setMode(GameMode.FISH)}
-              className="group relative h-72 bg-slate-900 rounded-3xl border border-blue-500/30 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(0,100,255,0.15)]"
-            >
-               {/* Use the asset banner via string path */}
-               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${fireKirinBanner}')` }}></div>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-               
-               <div className="absolute inset-0 flex flex-col items-center justify-end p-8 pb-10">
-                  <Gamepad2 className="w-12 h-12 text-cyan-400 mb-3 drop-shadow-lg group-hover:animate-bounce" />
-                  <h3 className="text-2xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Ocean King</h3>
-                  <p className="text-cyan-300 text-sm font-bold uppercase tracking-widest mt-1 opacity-80 group-hover:opacity-100">Fish Hunter</p>
-               </div>
-            </button>
+         <div className="w-full max-w-6xl space-y-8">
+             
+             {/* FEATURED GAMES */}
+             <div>
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Flame className="w-5 h-5 text-orange-500" /> FEATURED TABLES</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Fish Game Card */}
+                    <button 
+                    onClick={() => setMode(GameMode.FISH)}
+                    className="group relative h-64 bg-slate-900 rounded-3xl border border-blue-500/30 overflow-hidden hover:scale-[1.02] transition duration-300 shadow-[0_0_30px_rgba(0,100,255,0.15)]"
+                    >
+                        <img src={ASSETS.fireKirin.src} onError={(e) => e.currentTarget.src = ASSETS.fireKirin.fallback} alt="Ocean King" className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-end p-6">
+                            <Gamepad2 className="w-10 h-10 text-cyan-400 mb-2 drop-shadow-lg group-hover:animate-bounce" />
+                            <h3 className="text-xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Ocean King</h3>
+                            <p className="text-cyan-300 text-xs font-bold uppercase tracking-widest opacity-80">Fish Hunter</p>
+                        </div>
+                    </button>
 
-            {/* Slots Card */}
-            <button 
-              onClick={() => setMode(GameMode.SLOTS)}
-              className="group relative h-72 bg-slate-900 rounded-3xl border border-purple-500/30 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(147,51,234,0.15)]"
-            >
-               {/* Use the asset banner via string path */}
-               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${goldenDragonBanner}')` }}></div>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-               
-               <div className="absolute inset-0 flex flex-col items-center justify-end p-8 pb-10">
-                  <div className="text-5xl mb-3 drop-shadow-lg group-hover:animate-pulse">7️⃣</div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Dragon Slots</h3>
-                  <p className="text-purple-300 text-sm font-bold uppercase tracking-widest mt-1 opacity-80 group-hover:opacity-100">Jackpot 500x</p>
-               </div>
-            </button>
-            
-            {/* Creative Studio Card */}
-            <button 
-              onClick={() => setMode(GameMode.CREATIVE)}
-              className="group relative h-72 bg-slate-900 rounded-3xl border border-pink-500/30 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(236,72,153,0.15)]"
-            >
-               {/* Use the asset banner via string path */}
-               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${milkyWayBanner})` }}></div>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-               
-               <div className="absolute inset-0 flex flex-col items-center justify-end p-8 pb-10">
-                  <Palette className="w-12 h-12 text-pink-400 mb-3 drop-shadow-lg group-hover:rotate-12 transition" />
-                  <h3 className="text-2xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Nano Studio</h3>
-                  <p className="text-pink-300 text-sm font-bold uppercase tracking-widest mt-1 opacity-80 group-hover:opacity-100">AI Art Generator</p>
-               </div>
-            </button>
+                    {/* Slots Card */}
+                    <button 
+                    onClick={() => setMode(GameMode.SLOTS)}
+                    className="group relative h-64 bg-slate-900 rounded-3xl border border-purple-500/30 overflow-hidden hover:scale-[1.02] transition duration-300 shadow-[0_0_30px_rgba(147,51,234,0.15)]"
+                    >
+                        <img src={ASSETS.goldenDragon.src} onError={(e) => e.currentTarget.src = ASSETS.goldenDragon.fallback} alt="Dragon Slots" className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-end p-6">
+                            <div className="text-4xl mb-2 drop-shadow-lg group-hover:animate-pulse">7️⃣</div>
+                            <h3 className="text-xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Dragon Slots</h3>
+                            <p className="text-purple-300 text-xs font-bold uppercase tracking-widest opacity-80">Jackpot 500x</p>
+                        </div>
+                    </button>
+                    
+                    {/* Creative Studio Card */}
+                    <button 
+                    onClick={() => setMode(GameMode.CREATIVE)}
+                    className="group relative h-64 bg-slate-900 rounded-3xl border border-pink-500/30 overflow-hidden hover:scale-[1.02] transition duration-300 shadow-[0_0_30px_rgba(236,72,153,0.15)]"
+                    >
+                        <img src={ASSETS.milkyWay.src} onError={(e) => e.currentTarget.src = ASSETS.milkyWay.fallback} alt="Nano Studio" className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-80" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-end p-6">
+                            <Palette className="w-10 h-10 text-pink-400 mb-2 drop-shadow-lg group-hover:rotate-12 transition" />
+                            <h3 className="text-xl font-black text-white uppercase tracking-wider arcade-font drop-shadow-md">Nano Studio</h3>
+                            <p className="text-pink-300 text-xs font-bold uppercase tracking-widest opacity-80">AI Art Gen</p>
+                        </div>
+                    </button>
+                </div>
+             </div>
+
+             {/* MORE GAMES */}
+             <div>
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Crown className="w-5 h-5 text-yellow-500" /> CLASSIC ARCADE</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                     {[
+                         { name: 'Blue Dragon', img: ASSETS.blueDragon, type: 'Fish' },
+                         { name: 'Juwa', img: ASSETS.juwa, type: 'Slots' },
+                         { name: 'Panda Master', img: ASSETS.panda, type: 'Arcade' }
+                     ].map((game, i) => (
+                        <button 
+                            key={i} 
+                            onClick={() => {
+                                // For now, these redirect to fish game logic but with a different skin context if implemented
+                                setMode(GameMode.FISH);
+                            }}
+                            className="group relative h-40 bg-slate-900 rounded-2xl border border-white/10 overflow-hidden hover:border-yellow-500/50 hover:scale-[1.02] transition-all"
+                        >
+                            <img src={game.img.src} onError={(e) => e.currentTarget.src = game.img.fallback} alt={game.name} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-500" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                            <div className="absolute bottom-3 left-3">
+                                <h4 className="font-black text-white italic uppercase leading-none">{game.name}</h4>
+                                <span className="text-[10px] text-yellow-400 font-bold uppercase">{game.type}</span>
+                            </div>
+                        </button>
+                     ))}
+                </div>
+             </div>
+
          </div>
       </main>
 
