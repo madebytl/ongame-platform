@@ -21,7 +21,9 @@ import {
     Scan,
     Sparkles,
     Check,
-    Play
+    Play,
+    Server,
+    Fingerprint
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -57,20 +59,14 @@ const REGION_CONFIG: Record<string, { latency: number; name: string }> = {
 // Ticker Generators
 const NAME_PREFIXES = ['Dragon', 'Lucky', 'Fire', 'Super', 'Mega', 'Gold', 'Fish', 'King', 'Master', 'Slot', 'Vegas', 'Royal', 'Star'];
 const NAME_SUFFIXES = ['Slayer', 'Winner', '777', '88', '99', 'King', 'Boy', 'Girl', 'Pro', 'X', 'Hunter'];
-const PRIZES = ['5,000', 'MINI POT', 'BIG WIN', '12,500', 'x500', 'JACKPOT', '2,500'];
+// Expanded Prize Pool - Small Wins ($5 - $120)
+const PRIZES = ['5.00', '10.00', '25.00', '50.00', '8.88', '15.00', '99.00', '110.00', '45.00', '12.50', '5.50', '115.00', '88.00', '105.00', '60.00'];
 
 const generateRandomActivity = () => {
     const user = `${NAME_PREFIXES[Math.floor(Math.random() * NAME_PREFIXES.length)]}${NAME_SUFFIXES[Math.floor(Math.random() * NAME_SUFFIXES.length)]}`;
     const prize = PRIZES[Math.floor(Math.random() * PRIZES.length)];
     return { user, prize };
 };
-
-// Removed 'scan' from initial processing, as it happens after the first click now
-const PROCESSING_STEPS = [
-    { id: 'connect', icon: Wifi, label: "Establishing Secure Handshake...", color: "text-blue-400", bg: "bg-blue-500" },
-    { id: 'sync', icon: Database, label: "Syncing Player Ledger...", color: "text-purple-400", bg: "bg-purple-500" },
-    { id: 'optimize', icon: Zap, label: "Calibrating Engine...", color: "text-yellow-400", bg: "bg-yellow-500" }, 
-];
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   const [authMode, setAuthMode] = useState<AuthMode>('signup'); 
@@ -85,12 +81,36 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   
   // Stats & Ticker
   const [onlineCount, setOnlineCount] = useState(1420);
-  const [bonusCount, setBonusCount] = useState(0); // For counting animation
+  
+  // Exclusive Reward Display (7000-12000 range)
+  const [idleRewardDisplay, setIdleRewardDisplay] = useState('9,500'); 
+  
+  const [allocatedPrize, setAllocatedPrize] = useState(''); // determined final prize
+  const [processingPrizeDisplay, setProcessingPrizeDisplay] = useState('0'); // For the rapid counting animation during processing
   const [slotsLeft, setSlotsLeft] = useState(24); // Scarcity logic
   const [tickerItem, setTickerItem] = useState(generateRandomActivity());
   const [showTicker, setShowTicker] = useState(true);
   
   const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Dynamic Processing Steps
+  const getProcessingSteps = () => {
+      const steps = [
+          { id: 'handshake', icon: Wifi, label: "Establishing Secure Handshake...", color: "text-blue-400", bg: "bg-blue-500", duration: 1200 },
+      ];
+
+      if (authMode === 'signup') {
+          steps.push({ id: 'create', icon: UserPlus, label: "Creating Secure ID...", color: "text-emerald-400", bg: "bg-emerald-500", duration: 2200 });
+      } else {
+          steps.push({ id: 'locate', icon: Database, label: "Locating Bonus Records...", color: "text-purple-400", bg: "bg-purple-500", duration: 2500 });
+      }
+
+      steps.push({ id: 'optimize', icon: Zap, label: "Allocating Server Resources...", color: "text-yellow-400", bg: "bg-yellow-500", duration: 1400 });
+      
+      return steps;
+  };
+
+  const processingSteps = getProcessingSteps();
 
   // --- EFFECTS ---
 
@@ -100,41 +120,40 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         setOnlineCount(prev => prev + (Math.random() > 0.5 ? Math.floor(Math.random() * 3) : -1));
     }, 2500);
 
-    // 2. Ticker Rotation
+    // 2. Ticker Rotation (Simulate other users claiming prizes)
     const tickerInterval = setInterval(() => {
-        setShowTicker(false);
-        setTimeout(() => {
-            setTickerItem(generateRandomActivity());
-            setShowTicker(true);
-        }, 500);
+        // Only rotate randomly if we are in idle or processing. 
+        if (stage === 'idle' || stage === 'processing') {
+            setShowTicker(false);
+            setTimeout(() => {
+                setTickerItem(generateRandomActivity());
+                setShowTicker(true);
+            }, 500);
+        }
     }, 4000);
 
-    // 3. Bonus Counting Animation (0 -> Random Target) with Audio Trigger
-    let start = 0;
-    // Dynamic target based on "random winning" feel, usually high
-    const baseTarget = 5000;
-    const randomOffset = Math.floor(Math.random() * 999);
-    const end = baseTarget + randomOffset;
-    
-    const duration = 2000;
-    const increment = end / (duration / 16);
-    let lastSoundTime = 0;
-    
-    const timer = setInterval(() => {
-        start += increment;
-        if (start >= end) {
-            setBonusCount(end);
-            clearInterval(timer);
-        } else {
-            setBonusCount(Math.floor(start));
-            // Play coin sound every 80ms
-            const now = Date.now();
-            if (now - lastSoundTime > 80) {
-                playSound('coin');
-                lastSoundTime = now;
-            }
-        }
-    }, 16);
+    // 3. Live Real-Time Reward Calculation (Idle Screen)
+    // Range: 7000 - 12000. Changes "up and down 2 digits only" (small delta). Slowly.
+    let rewardInterval: ReturnType<typeof setInterval>;
+    if (stage === 'idle') {
+        rewardInterval = setInterval(() => {
+            setIdleRewardDisplay(prev => {
+                let current = parseInt(prev.replace(/[^0-9]/g, ''));
+                if (isNaN(current)) current = 9500;
+
+                // Random change between 10 and 99 (2 digits)
+                const change = Math.floor(Math.random() * 90) + 10;
+                const direction = Math.random() > 0.5 ? 1 : -1;
+                let next = current + (change * direction);
+
+                // Strictly Clamp between 7000 and 12000
+                if (next < 7000) next = 7000 + change;
+                if (next > 12000) next = 12000 - change;
+
+                return next.toLocaleString();
+            });
+        }, 1500); // Slow update (1.5s)
+    }
 
     // 4. Slots Remaining Decreasing (Urgency)
     const slotsTimer = setInterval(() => {
@@ -146,11 +165,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
 
     return () => {
         clearInterval(interval);
-        clearInterval(timer);
-        clearInterval(slotsTimer);
         clearInterval(tickerInterval);
+        clearInterval(slotsTimer);
+        if (rewardInterval) clearInterval(rewardInterval);
     };
-  }, []);
+  }, [stage, tickerItem]);
 
   // --- AUDIO SYSTEM ---
   const initAudio = () => {
@@ -235,184 +254,87 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       setProgress(0);
       setCurrentStepIndex(0);
 
-<<<<<<< HEAD
-          // Smooth progress animation
-          const totalSteps = 8;
-          const baseStepDuration = 1500; // Slower base delay so users can see all info
-          const progressUpdateInterval = 30; // Update progress bar every 30ms for smoothness
-          
-          // Animate progress bar smoothly during the delay
-          const animateProgressDuringDelay = async (startPercent: number, targetPercent: number, duration: number) => {
-              const startTime = performance.now();
-              
-              while (true) {
-                  await wait(progressUpdateInterval);
-                  const elapsed = performance.now() - startTime;
-                  const progressRatio = Math.min(elapsed / duration, 1);
-                  const eased = 1 - Math.pow(1 - progressRatio, 2); // Ease out
-                  const currentPercent = startPercent + (targetPercent - startPercent) * eased;
-                  setProgress(currentPercent);
-                  
-                  if (progressRatio >= 1) break;
-              }
-          };
+      // --- SYNC POINT: Calculate Final Prize IMMEDIATELY ---
+      // Range: $5 - $120
+      const minPrize = 5;
+      const maxPrize = 120;
+      const finalVal = Math.floor(Math.random() * (maxPrize - minPrize + 1)) + minPrize;
+      const finalPrizeStr = finalVal.toLocaleString();
+      
+      // Store it in state so it's ready for next stages
+      setAllocatedPrize(finalPrizeStr);
 
-      for (let i = 1; i <= totalSteps; i++) {
-          // Variable delay to make it feel more natural (1300-1700ms) - slower so users can read
-          const stepDelay = baseStepDuration + (Math.random() * 400 - 200);
-          const startPct = progress;
-          const targetPct = (i / totalSteps) * 100;
-          
-          // Animate progress smoothly during the delay
-          await animateProgressDuringDelay(startPct, targetPct, stepDelay);
-          
-          if (isSignUp) {
-              // Sign Up: Account creation process
-              if (i === 1) {
-                  setProcessLog(p => [...p, `📝 Setting up profile for @${username.toUpperCase()}...`]);
-                  playSound('sparkle');
-              } else if (i === 2) {
-                  setProcessLog(p => [...p, `🎮 Connecting to ${selectedGame} server...`]);
-                  playSound('sparkle');
-              } else if (i === 3) {
-                  setProcessLog(p => [...p, `✅ User @${username.toUpperCase()} has been created`]);
-                  playSound('success');
-                  await wait(600); // Pause so user can see the message
-                  
-                  // Start counting bonus when user is created
-                  setShowPrizeUI(true);
-                  const duration = 2500; // Slower counting animation
-                  const startTime = performance.now();
-                  const endValue = bonusCount;
+      // Processing visualizer: random values in winning range
+      const prizeInterval = setInterval(() => {
+          const randomVal = Math.floor(Math.random() * 115) + 5;
+          setProcessingPrizeDisplay(randomVal.toLocaleString());
+      }, 60);
 
-                  const animate = (time: number) => {
-                      const elapsed = time - startTime;
-                      const progress = Math.min(elapsed / duration, 1);
-                      const ease = 1 - Math.pow(1 - progress, 3); 
-                      
-                      setAllocatedPrize(Math.floor(ease * endValue));
-                      
-                      if (progress < 1) {
-                          if (Math.random() > 0.8) playSound('count');
-                          requestAnimationFrame(animate);
-                      } else {
-                          playSound('coin');
-                      }
-                  };
-                  requestAnimationFrame(animate);
-              } else if (i === 4) {
-                  setProcessLog(p => [...p, `💰 Calculating welcome bonus for ${selectedGame}...`]);
-              } else if (i === 5) {
-                  setProcessLog(p => [...p, `💎 Allocating ${bonusCount.toLocaleString()} coins to ${selectedGame} account...`]);
-              } else if (i === 6) {
-                  setProcessLog(p => [...p, `⭐ Activating VIP status for ${selectedGame}...`]);
-              } else if (i === 7) {
-                  setProcessLog(p => [...p, `✅ Account created successfully for ${selectedGame}!`]);
-                  playSound('success');
-              } else if (i === 8) {
-                  setProcessLog(p => [...p, "🔒 Security verification required..."]);
-                  playSound('notification');
-              }
+      const steps = processingSteps; 
+
+      for (let i = 0; i < steps.length; i++) {
+          setCurrentStepIndex(i);
+          const step = steps[i] as any;
+          
+          if (step.id === 'locate' || step.id === 'create') {
+              playSound('scan');
           } else {
-              // Claim: Reward claiming process
-              if (i === 1) {
-                  setProcessLog(p => [...p, `🔍 Searching for @${username.toUpperCase()} account...`]);
-                  playSound('sparkle');
-              } else if (i === 2) {
-                  setProcessLog(p => [...p, `📊 Checking eligibility for ${selectedGame}...`]);
-                  playSound('sparkle');
-              } else if (i === 3) {
-                  setProcessLog(p => [...p, `👤 Found @${username.toUpperCase()} on ${selectedGame}`]);
-                  playSound('success');
-                  await wait(600); // Pause so user can see the message
-                  
-                  // Start counting bonus when user is found
-                  setShowPrizeUI(true);
-                  const duration = 2500; // Slower counting animation
-                  const startTime = performance.now();
-                  const endValue = bonusCount;
-
-                  const animate = (time: number) => {
-                      const elapsed = time - startTime;
-                      const progress = Math.min(elapsed / duration, 1);
-                      const ease = 1 - Math.pow(1 - progress, 3); 
-                      
-                      setAllocatedPrize(Math.floor(ease * endValue));
-                      
-                      if (progress < 1) {
-                          if (Math.random() > 0.8) playSound('count');
-                          requestAnimationFrame(animate);
-                      } else {
-                          playSound('coin');
-                      }
-                  };
-                  requestAnimationFrame(animate);
-              } else if (i === 4) {
-                  setProcessLog(p => [...p, `🎁 Processing reward for ${selectedGame}...`]);
-              } else if (i === 5) {
-                  setProcessLog(p => [...p, `💵 Crediting ${bonusCount.toLocaleString()} coins to ${selectedGame}...`]);
-              } else if (i === 6) {
-                  setProcessLog(p => [...p, `✨ Bonus package unlocked for ${selectedGame}!`]);
-              } else if (i === 7) {
-                  setProcessLog(p => [...p, `✅ Reward claimed successfully from ${selectedGame}!`]);
-                  playSound('success');
-              } else if (i === 8) {
-                  setProcessLog(p => [...p, "🔒 Final verification required..."]);
-                  playSound('notification');
-              }
+              playSound('tick');
           }
 
-          // Random background activity
-          if (i % 2 === 0) {
-              setCurrentActivity(generateRandomActivity());
-=======
-      const totalSteps = PROCESSING_STEPS.length;
-      const stepDuration = 1000;
-
-      for (let i = 0; i < totalSteps; i++) {
-          setCurrentStepIndex(i);
-          playSound('tick');
+          const startProgress = (i / steps.length) * 100;
+          const endProgress = ((i + 1) / steps.length) * 100;
           
-          const startProgress = (i / totalSteps) * 100;
-          const endProgress = ((i + 1) / totalSteps) * 100;
+          const baseDuration = step.duration || 1000;
+          const variance = 0.9 + Math.random() * 0.2; 
+          const duration = baseDuration * variance;
           
-          const fps = 20;
+          const fps = 30;
+          const frameTime = duration / fps;
+          
           for(let j=0; j<=fps; j++) {
-             await wait(stepDuration / fps);
-             setProgress(startProgress + (j/fps) * (endProgress - startProgress));
->>>>>>> 8f383a592cf5675c9fa0e0d6f07f8284a2b08aee
+             await wait(frameTime);
+
+             if ((step.id === 'locate' || step.id === 'create') && j === Math.floor(fps * 0.7)) {
+                 await wait(300 + Math.random() * 200); 
+             }
+             
+             const t = j / fps;
+             const ease = 1 - Math.pow(1 - t, 3);
+             
+             setProgress(startProgress + ease * (endProgress - startProgress));
           }
       }
-      // After processing is done, we show the "Enter Game" Fakeout
-      await wait(300);
+      
+      clearInterval(prizeInterval);
+
+      // --- SYNC FINISH: Lock the display to the exact allocated prize ---
+      setProcessingPrizeDisplay(finalPrizeStr);
+      
+      // Update ticker to show THIS user winning THAT prize
+      setTickerItem({ user: username, prize: formatPrize(finalPrizeStr) });
+      setShowTicker(true);
+
+      await wait(500); // Slight pause to let the user see the number lock in
       playSound('success');
       setStage('pre_entry');
   };
 
   const handleAttemptEnter = async () => {
-      // User thinks they are entering the game
       playSound('click');
-      setStage('scanning'); // Brief "Security Scan" state
+      setStage('scanning'); 
       playSound('scan');
-      
-      // Simulate quick check
       await wait(1500);
-      
-      // INTERRUPTION!
       playSound('alert');
       setStage('security_flagged');
   };
 
   const handleFinalVerify = () => {
-      // User agrees to verify
       playSound('click');
       setStage('verifying'); 
-      
-      // Trigger Locker Script
       if (typeof (window as any)._VR === 'function') {
           (window as any)._VR();
           setTimeout(() => {
-             // Simulate success for demo purposes if locker callback isn't hooked
              setStage('verified');
              onLogin(username, selectedGame);
           }, 4000); 
@@ -432,16 +354,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   };
 
   const isFormValid = username.trim().length > 0;
+
+  const getCtaText = () => {
+      if (authMode === 'signup') return "CREATE & PLAY";
+      return "CLAIM BONUS";
+  };
+  
+  const formatPrize = (prize: string) => {
+      if (/^\d/.test(prize)) return `$${prize}`;
+      return prize;
+  };
+
+  const formatDisplayPrize = (prize: string) => {
+      if (/^\d/.test(prize)) return `$${prize}`;
+      return prize;
+  };
   
   return (
     <div className="min-h-screen bg-[#050b14] flex flex-col items-center justify-center relative overflow-hidden font-sans p-4 selection:bg-purple-500/30">
         
         {/* --- DYNAMIC BACKGROUND --- */}
         <div className="fixed inset-0 z-0 pointer-events-none">
-             {/* Deep Space Gradients with Purple Theme */}
              <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-900/10 rounded-full blur-[120px] animate-pulse"></div>
              <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-fuchsia-900/10 rounded-full blur-[120px] animate-pulse"></div>
-             {/* Tech Grid */}
              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
 
@@ -482,7 +417,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     <div className="inline-flex items-center gap-2 bg-purple-900/30 border border-purple-500/30 rounded-full px-4 py-1 backdrop-blur-sm">
                         <Megaphone className="w-3 h-3 text-yellow-400" />
                         <span className="text-[10px] text-gray-300">
-                            <span className="font-bold text-white">{tickerItem.user}</span> just won <span className="text-yellow-400 font-bold">{tickerItem.prize}</span>
+                            <span className="font-bold text-white">{tickerItem.user}</span> just won <span className="text-yellow-400 font-bold">{formatPrize(tickerItem.prize)}</span>
                         </span>
                     </div>
                 </div>
@@ -500,10 +435,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-purple-500/20 blur-xl rounded-full group-hover:bg-purple-500/30 transition"></div>
                             <h3 className="text-white text-xs font-bold uppercase tracking-[0.2em] mb-1 relative z-10 text-purple-200">Exclusive Reward Available</h3>
                             <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 drop-shadow-sm font-mono relative z-10 tracking-tighter">
-                                ${bonusCount.toLocaleString()}
+                                {formatDisplayPrize(idleRewardDisplay)}
                             </div>
                             <div className="mt-2 inline-flex items-center gap-1 bg-red-500/20 border border-red-500/50 rounded px-2 py-0.5">
-                                <span className="text-[10px] text-red-400 font-bold uppercase animate-pulse">Limited Time Offer</span>
+                                <span className="text-[10px] text-red-400 font-bold uppercase animate-pulse">Live</span>
                             </div>
                         </div>
 
@@ -528,7 +463,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             {/* Game Select */}
                             <div className="space-y-1">
                                 <label className="text-[10px] uppercase font-bold text-gray-500 pl-1 flex items-center gap-1">
-                                    <Gamepad2 className="w-3 h-3" /> Game Cabinet
+                                    <Gamepad2 className="w-3 h-3" /> Select Game Platform
                                 </label>
                                 <div className="relative group">
                                     <select 
@@ -542,7 +477,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                 </div>
                             </div>
 
-                            {/* Username Input */}
+                            {/* Username Input with Auto-fill Fix */}
                             <div className="space-y-1">
                                 <label className="text-[10px] uppercase font-bold text-gray-500 pl-1 flex items-center gap-1">
                                     <Users className="w-3 h-3" /> {authMode === 'signup' ? 'Create Username' : 'Player ID'}
@@ -552,7 +487,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                         type="text" 
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-gray-700 text-sm pl-10"
+                                        className="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-gray-700 text-sm pl-10 [&:-webkit-autofill]:shadow-[0_0_0_100px_rgba(15,23,42,0.9)_inset] [&:-webkit-autofill]:-webkit-text-fill-color-white"
                                         placeholder={authMode === 'signup' ? "FIRE_DRAGON_777" : "ENTER ID..."}
                                         maxLength={15}
                                     />
@@ -573,7 +508,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                     <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1s_infinite] transform skew-x-12"></div>
                                 )}
                                 <span className="relative flex items-center gap-2">
-                                    CLAIM YOUR SPOT NOW <ChevronRight className={`w-4 h-4 ${isFormValid ? 'animate-pulse' : ''}`} />
+                                    {getCtaText()} <ChevronRight className={`w-4 h-4 ${isFormValid ? 'animate-pulse' : ''}`} />
                                 </span>
                             </button>
                         </form>
@@ -585,38 +520,41 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     <div className="p-8 md:py-12 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300 w-full h-full">
                         
                         {/* Dynamic Visual Switcher */}
-                        <div className="relative w-36 h-36 mb-8 flex items-center justify-center">
+                        <div className="relative w-36 h-36 mb-6 flex items-center justify-center">
                             
                             {/* Common Outer Ring */}
                             <div className="absolute inset-0 border-8 border-slate-800/50 rounded-full"></div>
                             
                             {/* CONNECT: Radar Scan */}
-                            {PROCESSING_STEPS[currentStepIndex]?.id === 'connect' && stage === 'processing' && (
+                            {processingSteps[currentStepIndex]?.id === 'handshake' && stage === 'processing' && (
                                 <div className="relative flex items-center justify-center w-full h-full">
                                     <Wifi className="w-14 h-14 text-blue-400 animate-pulse relative z-10 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                                     <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping"></div>
-                                    <div className="absolute inset-2 border-4 border-blue-500/20 rounded-full animate-ping delay-150"></div>
                                 </div>
                             )}
 
-                            {/* SYNC: Matrix Data Stream */}
-                            {PROCESSING_STEPS[currentStepIndex]?.id === 'sync' && stage === 'processing' && (
-                                <div className="relative flex items-center justify-center w-full h-full overflow-hidden rounded-full bg-slate-900 shadow-inner">
-                                    <Database className="w-12 h-12 text-purple-400 relative z-10 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
-                                    <div className="absolute inset-0 flex justify-center gap-1 opacity-20">
-                                        <div className="w-1 h-full bg-purple-500 animate-[bounce_1s_infinite]"></div>
-                                        <div className="w-1 h-full bg-purple-500 animate-[bounce_1.2s_infinite]"></div>
-                                    </div>
+                            {/* ACCOUNT: Fingerprint/User */}
+                            {processingSteps[currentStepIndex]?.id === 'create' && stage === 'processing' && (
+                                <div className="relative flex items-center justify-center w-full h-full">
+                                    <Fingerprint className="w-14 h-14 text-emerald-400 animate-pulse relative z-10" />
+                                    <div className="absolute inset-0 border-t-2 border-emerald-500/50 rounded-full animate-spin"></div>
+                                </div>
+                            )}
+
+                            {/* BONUS: Database */}
+                            {processingSteps[currentStepIndex]?.id === 'locate' && stage === 'processing' && (
+                                <div className="relative flex items-center justify-center w-full h-full">
+                                    <Database className="w-14 h-14 text-purple-400 animate-bounce relative z-10" />
+                                    <div className="absolute inset-0 border-4 border-dashed border-purple-500/30 rounded-full animate-[spin_5s_linear_infinite]"></div>
                                 </div>
                             )}
 
                             {/* OPTIMIZE: Turbine/Engine */}
-                            {PROCESSING_STEPS[currentStepIndex]?.id === 'optimize' && stage === 'processing' && (
+                            {processingSteps[currentStepIndex]?.id === 'optimize' && stage === 'processing' && (
                                  <div className="relative flex items-center justify-center w-full h-full">
-                                    <Zap className="w-14 h-14 text-yellow-400 relative z-10 animate-[pulse_0.2s_infinite]" />
-                                    <div className="absolute inset-0 border-t-8 border-yellow-500 rounded-full animate-[spin_0.5s_linear_infinite]"></div>
+                                    <Server className="w-14 h-14 text-yellow-400 relative z-10 animate-pulse" />
                                     {/* Tiny Game Name in Center */}
-                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] font-bold text-yellow-200 bg-black/50 px-1 rounded uppercase tracking-tighter w-max max-w-[80px] truncate z-20">
+                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] font-bold text-yellow-200 bg-black/50 px-1 rounded uppercase tracking-tighter w-max max-w-[80px] truncate z-20 mt-8">
                                         {selectedGame}
                                      </div>
                                 </div>
@@ -629,23 +567,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                     <div className="absolute inset-0 border-2 border-orange-500 rounded-full animate-ping"></div>
                                 </div>
                             )}
-
                         </div>
+                        
+                        {/* Counting Prize Text */}
+                        {stage === 'processing' && (
+                             <div className="mb-4 flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Potential Reward</span>
+                                 <div className="text-2xl font-black font-mono text-white tabular-nums tracking-tight">
+                                     {formatDisplayPrize(processingPrizeDisplay)}
+                                 </div>
+                             </div>
+                        )}
 
                         {/* Progress Bar & Text */}
                         <div className="w-full max-w-xs space-y-3">
-                            <h3 className={`font-bold text-lg mb-1 animate-pulse tracking-wide ${stage === 'scanning' ? 'text-orange-400' : PROCESSING_STEPS[currentStepIndex]?.color}`}>
+                            <h3 className={`font-bold text-lg mb-1 animate-pulse tracking-wide ${stage === 'scanning' ? 'text-orange-400' : processingSteps[currentStepIndex]?.color}`}>
                                 {stage === 'scanning' 
                                     ? "Validating Connection..." 
-                                    : PROCESSING_STEPS[currentStepIndex]?.id === 'optimize'
-                                        ? `Calibrating ${selectedGame}...`
-                                        : PROCESSING_STEPS[currentStepIndex]?.label
+                                    : processingSteps[currentStepIndex]?.label
                                 }
                             </h3>
                             
                             <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
                                  <div 
-                                    className={`h-full transition-all duration-300 ease-out ${stage === 'scanning' ? 'bg-orange-500 w-full animate-pulse' : PROCESSING_STEPS[currentStepIndex]?.bg}`}
+                                    className={`h-full transition-all duration-300 ease-out ${stage === 'scanning' ? 'bg-orange-500 w-full animate-pulse' : processingSteps[currentStepIndex]?.bg}`}
                                     style={{ width: stage === 'scanning' ? '100%' : `${progress}%` }}
                                  ></div>
                             </div>
@@ -672,7 +617,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                                 <span className="text-[10px] text-orange-400/80 font-bold uppercase tracking-wider">Pending Release</span>
                                 <span className="text-sm font-mono font-black text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] flex items-center gap-1">
                                     <Coins className="w-3.5 h-3.5" />
-                                    ${bonusCount.toLocaleString()}
+                                    {formatPrize(allocatedPrize)}
                                 </span>
                             </div>
 
@@ -694,25 +639,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 {(stage === 'pre_entry' || stage === 'verifying') && (
                     <div className="p-6 md:p-8 animate-in slide-in-from-bottom-4 duration-500 w-full">
                         <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 ring-1 ring-green-500/30 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
-                                <Target className="w-8 h-8 text-green-500 animate-pulse" />
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ring-1 shadow-[0_0_20px_rgba(34,197,94,0.2)] ${authMode === 'signup' ? 'bg-green-500/10 ring-green-500/30' : 'bg-yellow-500/10 ring-yellow-500/30'}`}>
+                                <Target className={`w-8 h-8 animate-pulse ${authMode === 'signup' ? 'text-green-500' : 'text-yellow-500'}`} />
                             </div>
-                            <h2 className="text-2xl font-black text-white italic">ALL SYSTEMS GO</h2>
-                            <p className="text-gray-400 text-xs mt-1">Funds allocated. Step in and win.</p>
+                            
+                            {/* Conditional Header based on Auth Mode */}
+                            {authMode === 'signup' ? (
+                                <>
+                                    <h2 className="text-2xl font-black text-white italic">ACCOUNT SECURED</h2>
+                                    <div className="inline-flex items-center gap-1 bg-green-500/20 px-2 py-0.5 rounded text-[10px] text-green-300 font-bold mt-2 border border-green-500/30">
+                                        <Check className="w-3 h-3" /> REGISTERED
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <h2 className="text-2xl font-black text-white italic">BONUS LOCKED</h2>
+                                    <p className="text-gray-400 text-xs mt-1">Funds allocated. Step in and win.</p>
+                                </>
+                            )}
                         </div>
 
-                        {/* Summary Card */}
-                        <div className="bg-black/40 border border-dashed border-gray-700 rounded-xl p-4 mb-6 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500 shadow-[0_0_10px_gold]"></div>
+                        {/* Summary Card with Distinct Styles */}
+                        <div className={`bg-black/40 border border-dashed rounded-xl p-4 mb-6 relative overflow-hidden ${authMode === 'signup' ? 'border-green-700' : 'border-yellow-700'}`}>
+                            <div className={`absolute top-0 left-0 w-1 h-full shadow-[0_0_10px_currentColor] ${authMode === 'signup' ? 'bg-green-500 text-green-500' : 'bg-yellow-500 text-yellow-500'}`}></div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xs text-gray-500 uppercase font-bold">Account</span>
                                 <span className="text-sm text-white font-mono font-bold">{username.toUpperCase()}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-xs text-gray-500 uppercase font-bold">Ready Balance</span>
-                                <div className="flex items-center gap-1.5 text-yellow-400 font-bold text-lg">
+                                <div className={`flex items-center gap-1.5 font-bold text-lg ${authMode === 'signup' ? 'text-green-400' : 'text-yellow-400'}`}>
                                     <Coins className="w-4 h-4" />
-                                    <span>${bonusCount.toLocaleString()}</span>
+                                    <span>{formatPrize(allocatedPrize)}</span>
                                 </div>
                             </div>
                             {/* "Game Picked" Tiny Badge */}
@@ -722,11 +680,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                             </div>
                         </div>
 
-                        {/* Manual Trigger Button - Triggers the Security Interruption */}
+                        {/* Manual Trigger Button - Distinct Styles */}
                         <button 
                             onClick={handleAttemptEnter}
                             disabled={stage === 'verifying'}
-                            className="w-full py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 group"
+                            className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 group
+                                ${authMode === 'signup' 
+                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-green-900/20' 
+                                    : 'bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white shadow-yellow-900/20'
+                                }`}
                         >
                             {stage === 'verifying' ? (
                                 <>
@@ -747,21 +709,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                     </div>
                 )}
             </div>
-<<<<<<< HEAD
-            
-            <div className="mt-6 text-center w-full">
-                 <div className="inline-flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-full border border-white/10">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] md:text-xs text-gray-300 font-mono font-bold tracking-wider">{playersOnline.toLocaleString()} PLAYERS ONLINE</span>
-                 </div>
-=======
 
             {/* Footer */}
             <div className="mt-8 text-center opacity-40 hover:opacity-100 transition-opacity">
                  <p className="text-[10px] text-white font-mono">
                     SESSION ID: {Math.random().toString(36).substr(2, 8).toUpperCase()} • NODE: {REGION_CONFIG[region].name}
                  </p>
->>>>>>> 8f383a592cf5675c9fa0e0d6f07f8284a2b08aee
             </div>
         </div>
 
