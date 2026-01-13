@@ -8,10 +8,12 @@ import { generatePitBossResponse } from './services/geminiService';
 import { Bot, MessageSquare, Menu, X, Gamepad2, Coins, Palette, Sparkles, Megaphone } from 'lucide-react';
 
 // --- ASSETS ---
-// Using direct paths to avoid module resolution issues
-const FIRE_KIRIN_BG = 'games/firekirin-banner.png';
-const GOLDEN_DRAGON_BG = 'games/goldendragon-banner.png';
-const MILKY_WAY_BG = 'games/milkyway-banner.png';
+// Use direct string paths for images. 
+// In a native browser module environment, we cannot 'import' images.
+// These paths assume the 'games' folder is served at the root (same level as index.html).
+const fireKirinBanner = 'games/firekirin-banner.png';
+const goldenDragonBanner = 'games/goldendragon-banner.png';
+const milkyWayBanner = 'games/milkyway-banner.png';
 
 // Ticker Generators (Synced with Landing Page logic)
 const NAME_PREFIXES = ['Dragon', 'Lucky', 'Fire', 'Super', 'Mega', 'Gold', 'Fish', 'King', 'Master', 'Slot', 'Vegas', 'Royal', 'Star'];
@@ -196,7 +198,7 @@ export const App = () => {
               className="group relative h-72 bg-slate-900 rounded-3xl border border-blue-500/30 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(0,100,255,0.15)]"
             >
                {/* Use the asset banner via string path */}
-               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${FIRE_KIRIN_BG}')` }}></div>
+               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${fireKirinBanner}')` }}></div>
                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                
                <div className="absolute inset-0 flex flex-col items-center justify-end p-8 pb-10">
@@ -212,7 +214,7 @@ export const App = () => {
               className="group relative h-72 bg-slate-900 rounded-3xl border border-purple-500/30 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(147,51,234,0.15)]"
             >
                {/* Use the asset banner via string path */}
-               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${GOLDEN_DRAGON_BG}')` }}></div>
+               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${goldenDragonBanner}')` }}></div>
                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                
                <div className="absolute inset-0 flex flex-col items-center justify-end p-8 pb-10">
@@ -228,7 +230,7 @@ export const App = () => {
               className="group relative h-72 bg-slate-900 rounded-3xl border border-pink-500/30 overflow-hidden hover:scale-105 transition duration-300 shadow-[0_0_30px_rgba(236,72,153,0.15)]"
             >
                {/* Use the asset banner via string path */}
-               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${MILKY_WAY_BG}')` }}></div>
+               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url('${milkyWayBanner})` }}></div>
                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                
                <div className="absolute inset-0 flex flex-col items-center justify-end p-8 pb-10">
