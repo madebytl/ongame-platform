@@ -8,12 +8,11 @@ import { generatePitBossResponse } from './services/geminiService';
 import { Bot, MessageSquare, Menu, X, Gamepad2, Coins, Palette, Sparkles, Megaphone } from 'lucide-react';
 
 // --- ASSETS ---
-// Use direct string paths for images. 
-// In a native browser module environment, we cannot 'import' images.
-// These paths assume the 'games' folder is served at the root (same level as index.html).
-const fireKirinBanner = 'games/firekirin-banner.png';
-const goldenDragonBanner = 'games/goldendragon-banner.png';
-const milkyWayBanner = 'games/milkyway-banner.png';
+// Pointing to local assets in the /games directory
+// Note: In this environment, we use direct paths relative to index.html
+const fireKirinBanner = './games/firekirin-banner.png';
+const goldenDragonBanner = './games/goldendragon-banner.png';
+const milkyWayBanner = './games/milkyway-banner.png';
 
 // Ticker Generators (Synced with Landing Page logic)
 const NAME_PREFIXES = ['Dragon', 'Lucky', 'Fire', 'Super', 'Mega', 'Gold', 'Fish', 'King', 'Master', 'Slot', 'Vegas', 'Royal', 'Star'];
