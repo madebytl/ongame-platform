@@ -11,13 +11,11 @@ import {
     ChevronRight, 
     Database, 
     Wifi, 
-    Lock,
-    Unlock,
+    Lock, 
     Coins,
     Megaphone,
     Target,
     Timer,
-    AlertTriangle,
     Scan,
     Sparkles,
     Check,
@@ -38,15 +36,26 @@ type Stage = 'idle' | 'processing' | 'pre_entry' | 'scanning' | 'security_flagge
 // --- CONFIGURATION & DATA ---
 
 const AVAILABLE_GAMES = [
+    'Blue Dragon',
+    'Buffalo Strike',
     'Fire Kirin',
+    'Fortune 2 Go',
     'Game Vault',
-    'Orion Stars',
-    'Vegas Sweeps',
-    'RiverSweeps',
     'Golden Dragon',
-    'Ultra Monster',
+    'Juwa',
+    'Kraken',
+    'Milky Way',
+    'Ocean Dragon',
+    'Orion Stars',
     'Panda Master',
-    'Vpower'
+    'Pot of Gold',
+    'Pulsz',
+    'RiverSweeps',
+    'Slots of Vegas',
+    'Ultra Monster',
+    'Vegas X',
+    'VPower',
+    'X Game'
 ];
 
 const REGION_CONFIG: Record<string, { latency: number; name: string }> = {
@@ -71,7 +80,7 @@ const generateRandomActivity = () => {
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
   const [authMode, setAuthMode] = useState<AuthMode>('signup'); 
   const [username, setUsername] = useState('');
-  const [selectedGame, setSelectedGame] = useState(AVAILABLE_GAMES[0]);
+  const [selectedGame, setSelectedGame] = useState(AVAILABLE_GAMES[2]); // Default to Fire Kirin
   const [region, setRegion] = useState('NA_EAST');
   
   // Logic State
